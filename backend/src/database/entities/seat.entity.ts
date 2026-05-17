@@ -22,7 +22,7 @@ export class Seat {
     @Column({ type: 'nvarchar', length: 50 })
     seat_number: number;
 
-    @Column({ type: 'boolean', default: true })
+    @Column({ default: true })
     is_available: boolean;
 
     @OneToOne(() => BookingDetail, (bookingDetail) => bookingDetail.seat)
