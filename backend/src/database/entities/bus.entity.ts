@@ -27,6 +27,9 @@ export class Bus {
     @CreateDateColumn({ type: 'date' })
     createdAt: Date;
 
+    @Column({ default: false })
+    deleted: boolean;
+
     @OneToMany(() => Trip, (trip) => trip.bus)
     trips: Trip[];
 }
