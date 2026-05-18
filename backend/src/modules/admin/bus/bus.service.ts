@@ -27,7 +27,11 @@ export class BusService {
         const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition);
 
         //search
-        const { searchResult, whereCondition } = this.search.search(keyword, queryCondition);
+        const { searchResult, whereCondition } = this.search.search(
+            keyword,
+            queryCondition,
+            ["licensePlate", "type", "model"]
+        );
 
         //pagination
         const paginationObject = await this.pagination.pagination(page, whereCondition, this.busRepo);
