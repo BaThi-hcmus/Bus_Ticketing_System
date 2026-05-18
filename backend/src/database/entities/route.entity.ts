@@ -12,16 +12,16 @@ export class Route {
     id: string;
 
     @Column()
-    departure_location: string;
+    departureLocation: string;
 
     @Column()
-    destination_location: string;
+    destinationLocation: string;
 
     @Column()
-    distance_km: number;
+    distanceKm: number;
 
     @Column()
-    estimated_duration: number;
+    estimatedDuration: number;
 
     @OneToMany(() => Trip, (trip) => trip.route)
     trips: Trip[];

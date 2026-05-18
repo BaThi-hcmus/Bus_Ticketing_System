@@ -18,7 +18,7 @@ export class BusService {
 
         //kiểm tra biển số xe có tồn tại chưa
         const isBusExist = await this.busRepo.findOne({
-            where: { license_plate: licensePlate }
+            where: { licensePlate: licensePlate }
         })
 
         //Nếu tồn tại thì báo lỗi

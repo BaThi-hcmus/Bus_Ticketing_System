@@ -20,11 +20,11 @@ export class Seat {
     trip: Trip;
 
     @Column({ type: 'nvarchar', length: 50 })
-    seat_number: number;
+    seatNumber: number;
 
     @Column({ default: true })
-    is_available: boolean;
+    isAvailable: boolean;
 
     @OneToOne(() => BookingDetail, (bookingDetail) => bookingDetail.seat)
-    booking_detail: BookingDetail;
+    bookingDetail: BookingDetail;
 }

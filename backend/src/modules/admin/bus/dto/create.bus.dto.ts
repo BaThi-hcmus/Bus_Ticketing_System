@@ -1,6 +1,6 @@
 export class CreateBusDto {
     licensePlate: string;
     type: string;
-    totalSeats: string;
+    totalSeats: number;
     model: string;
 }

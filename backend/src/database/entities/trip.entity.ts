@@ -18,22 +18,22 @@ export class Trip {
 
     // Quan hệ với bảng Route
     @ManyToOne(() => Route, (route) => route.trips)
-    @JoinColumn({ name: 'route_id' }) // Tên cột khóa ngoại trong SQL Server
+    @JoinColumn({ name: 'routeId' }) // Tên cột khóa ngoại trong SQL Server
     route: Route;
 
     // Quan hệ với bảng Bus
     @ManyToOne(() => Bus, (bus) => bus.trips)
-    @JoinColumn({ name: 'bus_id' })
+    @JoinColumn({ name: 'busId' })
     bus: Bus
 
     @Column({ type: 'datetime' })
-    departure_time: Date;
+    departureTime: Date;
 
     @Column({ type: 'datetime' })
-    arrival_time: Date;
+    arrivalTime: Date;
 
     @Column({ type: 'decimal', precision: 18, scale: 2 })
-    ticket_price: number;
+    ticketPrice: number;
 
     @Column({ type: 'nvarchar', length: 50, default: 'scheduled' })
     status: string;

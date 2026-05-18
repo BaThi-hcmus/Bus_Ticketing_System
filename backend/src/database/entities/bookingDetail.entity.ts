@@ -14,11 +14,11 @@ export class BookingDetail {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(() => Booking, (booking) => booking.booking_details)
+    @ManyToOne(() => Booking, (booking) => booking.bookingDetails)
     @JoinColumn({ name: 'booking_id' })
     booking: Booking;
 
-    @OneToOne(() => Seat, (seat) => seat.booking_detail)
+    @OneToOne(() => Seat, (seat) => seat.bookingDetail)
     @JoinColumn({ name: 'seat_id' })
     seat: Seat;
 }

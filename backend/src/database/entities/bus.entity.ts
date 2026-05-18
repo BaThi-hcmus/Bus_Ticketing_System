@@ -13,19 +13,19 @@ export class Bus {
     id: number;
 
     @Column({ type: 'nvarchar', length: 20, unique: true })
-    license_plate: string;
+    licensePlate: string;
 
     @Column({ type: 'nvarchar', length: 50 })
     type: string;
 
     @Column({ type: 'decimal' })
-    total_seats: number;
+    totalSeats: number;
 
     @Column({ type: 'nvarchar', length: 50 })
     model: string;
 
     @CreateDateColumn({ type: 'date' })
-    created_at: Date;
+    createdAt: Date;
 
     @OneToMany(() => Trip, (trip) => trip.bus)
     trips: Trip[];

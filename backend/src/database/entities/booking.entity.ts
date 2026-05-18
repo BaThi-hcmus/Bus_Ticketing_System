@@ -16,22 +16,22 @@ export class Booking {
     id: string;
 
     @ManyToOne(() => User, (user) => user.bookings)
-    @JoinColumn({ name: 'user_id' })
+    @JoinColumn({ name: 'userId' })
     user: User;
 
     @ManyToOne(() => Trip, (trip) => trip.bookings)
-    @JoinColumn({ name: 'trip_id' })
+    @JoinColumn({ name: 'tripId' })
     trip: Trip;
 
     @Column({ type: 'datetime' })
-    booking_date: Date;
+    bookingDate: Date;
 
     @Column({ type: 'decimal' })
-    total_amount: number;
+    totalAmount: number;
 
     @Column({ type: 'nvarchar', length: 50 })
-    payment_status: string;
+    paymentStatus: string;
 
     @OneToMany(() => BookingDetail, (bookingDetail) => bookingDetail.booking)
-    booking_details: BookingDetail[];
+    bookingDetails: BookingDetail[];
 }
