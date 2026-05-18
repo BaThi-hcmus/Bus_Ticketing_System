@@ -1,0 +1,20 @@
+export class Pagination {
+    pagination = async (currentPage, queryCondition, busRepo) => {
+        const paginationObject: any = {
+            currentPage: 1,
+            itemPerPage: 4
+        }
+
+        if (currentPage) paginationObject.currentPage = currentPage;
+
+        //Số bản ghi trong table 
+        const totalItems = await busRepo.count({
+            where: queryCondition
+        });
+        paginationObject.totalPages = Math.ceil(totalItems / paginationObject.itemPerPage);
+
+        paginationObject.startIndex = (paginationObject.currentPage - 1) * paginationObject.itemPerPage;
+
+        return paginationObject;
+    }
+}         

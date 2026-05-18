@@ -30,6 +30,9 @@ export class Bus {
     @Column({ default: false })
     deleted: boolean;
 
+    @Column({ default: "active" })
+    status: string;
+
     @OneToMany(() => Trip, (trip) => trip.bus)
     trips: Trip[];
 }

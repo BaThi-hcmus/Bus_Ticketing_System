@@ -5,7 +5,8 @@ import {
   Patch,
   Query,
   Param,
-  Delete
+  Delete,
+  Get
 } from '@nestjs/common';
 import { BusService } from './bus.service';
 import { CreateBusDto } from './dto/create.bus.dto';
@@ -14,6 +15,20 @@ import { EditBusDto } from './dto/edit.bus.dto';
 @Controller('admin/bus')
 export class BusController {
   constructor(private readonly busService: BusService) { }
+
+  @Get()
+  async getBuses(
+    @Query('status') status: string,
+    @Query('keyword') keyword: string,
+    @Query('page') page: number
+  ) {
+    const result = await this.busService.getBuses(status, keyword, page);
+
+    return {
+      message: 'Lấy danh sách bus thành công',
+      data: result
+    }
+  }
 
   @Post('create')
   async createBus(@Body() createBusDto: CreateBusDto) {

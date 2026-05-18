@@ -4,21 +4,54 @@ import { Repository, Not } from 'typeorm';
 import { Bus } from 'src/database/entities/bus.entity';
 import { CreateBusDto } from './dto/create.bus.dto';
 import { EditBusDto } from './dto/edit.bus.dto';
+import { FilterStatus } from '../../../utils/filterStatus.util';
+import { Search } from '../../../utils/search.util';
+import { Pagination } from '../../../utils/pagination.util';
 
 @Injectable()
 export class BusService {
     constructor(
         //Tiêm repository của typeORM vào
-        @InjectRepository(Bus)
-        private readonly busRepo: Repository<Bus>
+        @InjectRepository(Bus) private readonly busRepo: Repository<Bus>,
+        private readonly filterStatus: FilterStatus,
+        private readonly search: Search,
+        private readonly pagination: Pagination
     ) { }
+
+    async getBuses(status: string, keyword: string, page: number): Promise<any> {
+        const queryCondition = {
+            deleted: false,
+        }
+
+        //filter
+        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition);
+
+        //search
+        const { searchResult, whereCondition } = this.search.search(keyword, queryCondition);
+
+        //pagination
+        const paginationObject = await this.pagination.pagination(page, whereCondition, this.busRepo);
+
+        const result = await this.busRepo.find({
+            where: whereCondition,
+            skip: paginationObject.startIndex,
+            take: paginationObject.itemPerPage
+        })
+
+        return {
+            data: result,
+            filterStatusObject: filterStatusObject,
+            searchResult: searchResult,
+            paginationObject: paginationObject
+        };
+    }
 
     async createBus(createBusDto: CreateBusDto): Promise<Bus> {
         const licensePlate = createBusDto.licensePlate;
 
         //kiểm tra biển số xe có tồn tại chưa
         const isBusExist = await this.busRepo.findOne({
-            where: { licensePlate: licensePlate }
+            where: { licensePlate: licensePlate, deleted: false }
         })
 
         //Nếu tồn tại thì báo lỗi
