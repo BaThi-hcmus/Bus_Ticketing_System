@@ -6,6 +6,7 @@ import { Bus } from 'src/database/entities/bus.entity';
 import { FilterStatus } from '../../../utils/filterStatus.util';
 import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
+import { Sort } from 'src/utils/sort.ulti';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Bus])],
@@ -14,7 +15,8 @@ import { Pagination } from '../../../utils/pagination.util';
     BusService,
     FilterStatus,
     Search,
-    Pagination
+    Pagination,
+    Sort
   ],
 })
 export class BusModule { }

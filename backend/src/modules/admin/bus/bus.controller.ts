@@ -20,9 +20,10 @@ export class BusController {
   async getBuses(
     @Query('status') status: string,
     @Query('keyword') keyword: string,
-    @Query('page') page: number
+    @Query('page') page: number,
+    @Query('sortType') sortType: string
   ) {
-    const result = await this.busService.getBuses(status, keyword, page);
+    const result = await this.busService.getBuses(status, keyword, page, sortType);
 
     return {
       message: 'Lấy danh sách bus thành công',

@@ -7,6 +7,7 @@ import { EditBusDto } from './dto/edit.bus.dto';
 import { FilterStatus } from '../../../utils/filterStatus.util';
 import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
+import { Sort } from 'src/utils/sort.ulti';
 
 @Injectable()
 export class BusService {
@@ -15,10 +16,11 @@ export class BusService {
         @InjectRepository(Bus) private readonly busRepo: Repository<Bus>,
         private readonly filterStatus: FilterStatus,
         private readonly search: Search,
-        private readonly pagination: Pagination
+        private readonly pagination: Pagination,
+        private readonly sort: Sort
     ) { }
 
-    async getBuses(status: string, keyword: string, page: number): Promise<any> {
+    async getBuses(status: string, keyword: string, page: number, sortType: string): Promise<any> {
         const queryCondition = {
             deleted: false,
         }
@@ -36,8 +38,54 @@ export class BusService {
         //pagination
         const paginationObject = await this.pagination.pagination(page, whereCondition, this.busRepo);
 
+        //sort
+        const sortList = [
+            {
+                name: "Biển số xe tăng dần",
+                type: "licensePlate-src"
+            },
+            {
+                name: "Biển số xe giảm dần",
+                type: "licensePlate-desc"
+            },
+            {
+                name: "Loại xe tăng dần",
+                type: "type-src"
+            },
+            {
+                name: "Loại xe giảm dần",
+                type: "type-desc"
+            },
+            {
+                name: "Hãng xe tăng dần",
+                type: "model-src"
+            },
+            {
+                name: "Hãng xe giảm dần",
+                type: "model-desc"
+            },
+            {
+                name: "Số lượng ghế tăng dần",
+                type: "totalSeats-src"
+            },
+            {
+                name: "Số lượng ghế giảm dần",
+                type: "totalSeats-desc"
+            },
+            {
+                name: "Thời gian tạo tăng dần",
+                type: "createdAt-src"
+            },
+            {
+                name: "Thời gian tạo giảm dần",
+                type: "createdAt-desc"
+            }
+        ]
+        const orderCondition = this.sort.sort(sortType, sortList);
+
         const result = await this.busRepo.find({
             where: whereCondition,
+            order: orderCondition,
             skip: paginationObject.startIndex,
             take: paginationObject.itemPerPage
         })
@@ -46,7 +94,8 @@ export class BusService {
             data: result,
             filterStatusObject: filterStatusObject,
             searchResult: searchResult,
-            paginationObject: paginationObject
+            paginationObject: paginationObject,
+            sortType: sortType
         };
     }
 
