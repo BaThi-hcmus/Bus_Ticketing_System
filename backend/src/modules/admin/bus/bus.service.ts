@@ -188,4 +188,20 @@ export class BusService {
             { status: status }
         )
     }
+
+    async deleteOne(id: number): Promise<void> {
+        //kiểm tra bus có tồn tại hay chưa
+        const isBusExist = await this.busRepo.findOne({
+            where: { id: id, deleted: false }
+        })
+
+        if (!isBusExist) {
+            throw new ConflictException(`Không tồn tại bus có id: ${id}`);
+        }
+
+        await this.busRepo.update(
+            { id: id },
+            { deleted: true }
+        )
+    }
 }

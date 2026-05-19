@@ -68,4 +68,13 @@ export class BusController {
       message: 'Cập nhật trạng thái bus thành công',
     }
   }
+
+  @Delete('deleteOne/:id')
+  async deleteOne(@Param('id') id: number) {
+    const result = await this.busService.deleteOne(id);
+
+    return {
+      message: 'Xóa bus thành công'
+    }
+  }
 }
