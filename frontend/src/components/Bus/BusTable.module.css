@@ -1,0 +1,97 @@
+.tableContainer {
+    width: 100%;
+    overflow-x: auto;
+    background-color: var(--surface-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.table th {
+    background-color: #f9fafb;
+    padding: 16px 24px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table td {
+    padding: 16px 24px;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.statusBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.statusActive {
+    background-color: var(--success-bg);
+    color: var(--success-color);
+}
+
+.statusInactive {
+    background-color: var(--danger-bg);
+    color: var(--danger-color);
+}
+
+.actions {
+    display: flex;
+    gap: 12px;
+}
+
+.actionBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background-color: transparent;
+    transition: all 0.2s;
+}
+
+.editBtn {
+    color: var(--primary-color);
+}
+
+.editBtn:hover {
+    background-color: rgba(79, 70, 229, 0.1);
+}
+
+.deleteBtn {
+    color: var(--danger-color);
+}
+
+.deleteBtn:hover {
+    background-color: var(--danger-bg);
+}
+
+.emptyState {
+    padding: 48px;
+    text-align: center;
+    color: var(--text-secondary);
+}

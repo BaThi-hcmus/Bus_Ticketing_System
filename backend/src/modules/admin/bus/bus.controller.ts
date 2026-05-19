@@ -50,31 +50,4 @@ export class BusController {
       data: result
     }
   }
-
-  @Delete('delete/:id')
-  async deleteBus(@Param('id') id: number) {
-    await this.busService.deleteBus(id);
-
-    return {
-      message: 'Xóa bus thành công',
-    }
-  }
-
-  @Patch('changeStatusOne/:status/:id')
-  async changeStatusOne(@Param('status') status: string, @Param('id') id: number) {
-    const result = await this.busService.changeStatusOne(status, id);
-
-    return {
-      message: 'Cập nhật trạng thái bus thành công',
-    }
-  }
-
-  @Delete('deleteOne/:id')
-  async deleteOne(@Param('id') id: number) {
-    const result = await this.busService.deleteOne(id);
-
-    return {
-      message: 'Xóa bus thành công'
-    }
-  }
 }
