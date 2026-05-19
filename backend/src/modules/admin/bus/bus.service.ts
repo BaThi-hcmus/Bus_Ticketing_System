@@ -158,4 +158,17 @@ export class BusService {
         const updatedBus = await this.busRepo.findOne({ where: { id: id } });
         return updatedBus as any;
     }
+
+    async getBusDetail(id: number): Promise<any> {
+        const bus = await this.busRepo.findOne({
+            where: { id: id, deleted: false },
+            relations: ['trips'] // Lấy kèm danh sách chuyến xe
+        });
+
+        if (!bus) {
+            throw new NotFoundException(`Không tìm thấy xe bus có ID [${id}]`);
+        }
+
+        return bus;
+    }
 }

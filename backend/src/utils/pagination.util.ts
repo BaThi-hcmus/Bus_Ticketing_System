@@ -11,6 +11,7 @@ export class Pagination {
         const totalItems = await repo.count({
             where: queryCondition
         });
+        paginationObject.totalItems = totalItems;
         paginationObject.totalPages = Math.ceil(totalItems / paginationObject.itemPerPage);
 
         paginationObject.startIndex = (paginationObject.currentPage - 1) * paginationObject.itemPerPage;

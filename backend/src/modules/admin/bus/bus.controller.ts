@@ -50,4 +50,14 @@ export class BusController {
       data: result
     }
   }
+
+  @Get('detail/:id')
+  async getBusDetail(@Param('id') id: number) {
+    const result = await this.busService.getBusDetail(id);
+
+    return {
+      message: 'Lấy thông tin chi tiết xe bus thành công',
+      data: result
+    }
+  }
 }

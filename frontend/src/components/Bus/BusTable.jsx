@@ -1,14 +1,14 @@
 import React from 'react';
-import { FaEdit, FaTrash } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 import styles from './BusTable.module.css';
 
-const BusTable = ({ buses, onEdit, onDelete }) => {
+const BusTable = ({ buses, startIndex = 0, onEdit, onDelete, onToggleStatus, onView }) => {
     return (
         <div className={styles.tableContainer}>
             <table className={styles.table}>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>STT</th>
                         <th>Biển số xe</th>
                         <th>Loại xe</th>
                         <th>Hãng xe</th>
@@ -25,20 +25,31 @@ const BusTable = ({ buses, onEdit, onDelete }) => {
                             </td>
                         </tr>
                     ) : (
-                        buses.map((bus) => (
+                        buses.map((bus, index) => (
                             <tr key={bus.id}>
-                                <td>#{bus.id}</td>
+                                <td>{startIndex + index + 1}</td>
                                 <td style={{ fontWeight: 600 }}>{bus.licensePlate}</td>
                                 <td>{bus.type}</td>
                                 <td>{bus.model}</td>
                                 <td>{bus.totalSeats}</td>
                                 <td>
-                                    <span className={`${styles.statusBadge} ${bus.status === 'active' ? styles.statusActive : styles.statusInactive}`}>
+                                    <button 
+                                        className={`${styles.statusBadge} ${bus.status === 'active' ? styles.statusActive : styles.statusInactive}`}
+                                        onClick={() => onToggleStatus(bus)}
+                                        title="Nhấn để đổi trạng thái"
+                                    >
                                         {bus.status === 'active' ? 'Hoạt động' : 'Dừng hoạt động'}
-                                    </span>
+                                    </button>
                                 </td>
                                 <td>
                                     <div className={styles.actions}>
+                                        <button 
+                                            className={`${styles.actionBtn} ${styles.viewBtn}`}
+                                            onClick={() => onView(bus.id)}
+                                            title="Xem chi tiết"
+                                        >
+                                            <FaEye size={16} />
+                                        </button>
                                         <button 
                                             className={`${styles.actionBtn} ${styles.editBtn}`}
                                             onClick={() => onEdit(bus)}

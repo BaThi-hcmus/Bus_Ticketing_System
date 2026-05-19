@@ -46,6 +46,13 @@
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s;
+}
+
+.statusBadge:hover {
+    opacity: 0.8;
 }
 
 .statusActive {
@@ -72,6 +79,14 @@
     border-radius: var(--radius-sm);
     background-color: transparent;
     transition: all 0.2s;
+}
+
+.viewBtn {
+    color: #0284c7; /* Sky blue */
+}
+
+.viewBtn:hover {
+    background-color: #e0f2fe;
 }
 
 .editBtn {

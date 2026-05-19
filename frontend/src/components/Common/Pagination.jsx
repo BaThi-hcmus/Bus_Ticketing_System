@@ -3,9 +3,13 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import styles from './Pagination.module.css';
 
 const Pagination = ({ paginationObject, onPageChange }) => {
-    if (!paginationObject || paginationObject.totalPages <= 1) return null;
+    if (!paginationObject) return null;
 
-    const { currentPage, totalPages, totalItems, itemPerPage, startIndex } = paginationObject;
+    const currentPage = Number(paginationObject.currentPage);
+    const totalPages = Number(paginationObject.totalPages);
+    const totalItems = Number(paginationObject.totalItems || 0);
+    const itemPerPage = Number(paginationObject.itemPerPage);
+    const startIndex = Number(paginationObject.startIndex);
 
     const generatePageNumbers = () => {
         const pages = [];
@@ -19,14 +23,10 @@ const Pagination = ({ paginationObject, onPageChange }) => {
 
     return (
         <div className={styles.pagination}>
-            <div className={styles.info}>
-                Hiển thị <strong>{startIndex + 1}</strong> đến <strong>{endIndex}</strong> trong tổng số <strong>{totalItems}</strong> kết quả
-            </div>
-            
             <div className={styles.controls}>
                 <button 
                     className={styles.pageBtn}
-                    disabled={currentPage === 1}
+                    disabled={currentPage <= 1}
                     onClick={() => onPageChange(currentPage - 1)}
                 >
                     <FaChevronLeft size={12} />
@@ -44,7 +44,7 @@ const Pagination = ({ paginationObject, onPageChange }) => {
 
                 <button 
                     className={styles.pageBtn}
-                    disabled={currentPage === totalPages}
+                    disabled={currentPage >= totalPages}
                     onClick={() => onPageChange(currentPage + 1)}
                 >
                     <FaChevronRight size={12} />

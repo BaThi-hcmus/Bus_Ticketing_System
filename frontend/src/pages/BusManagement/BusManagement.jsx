@@ -3,6 +3,7 @@ import api from '../../services/api';
 import BusFilter from '../../components/Bus/BusFilter';
 import BusTable from '../../components/Bus/BusTable';
 import BusModal from '../../components/Bus/BusModal';
+import BusDetailModal from '../../components/Bus/BusDetailModal';
 import Pagination from '../../components/Common/Pagination';
 import styles from './BusManagement.module.css';
 
@@ -18,6 +19,8 @@ const BusManagement = () => {
     const [error, setError] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBus, setEditingBus] = useState(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+    const [selectedBusDetail, setSelectedBusDetail] = useState(null);
 
     // Query states
     const [status, setStatus] = useState('');
@@ -96,6 +99,26 @@ const BusManagement = () => {
         }
     };
 
+    const handleToggleStatus = async (bus) => {
+        const newStatus = bus.status === 'active' ? 'inactive' : 'active';
+        try {
+            await api.patch(`/admin/bus/edit/${bus.id}`, { status: newStatus });
+            fetchBuses(); // Cập nhật lại danh sách sau khi đổi
+        } catch (err) {
+            alert(err.message || 'Lỗi khi đổi trạng thái');
+        }
+    };
+
+    const handleViewClick = async (id) => {
+        try {
+            const response = await api.get(`/admin/bus/detail/${id}`);
+            setSelectedBusDetail(response.data);
+            setIsDetailModalOpen(true);
+        } catch (err) {
+            alert(err.message || 'Lỗi khi lấy chi tiết xe bus');
+        }
+    };
+
     const handleModalSubmit = async (formData) => {
         try {
             if (editingBus) {
@@ -136,8 +159,11 @@ const BusManagement = () => {
                 <>
                     <BusTable
                         buses={buses}
+                        startIndex={paginationObj ? paginationObj.startIndex : 0}
                         onEdit={handleEditClick}
                         onDelete={handleDeleteClick}
+                        onToggleStatus={handleToggleStatus}
+                        onView={handleViewClick}
                     />
 
                     <Pagination
@@ -152,6 +178,12 @@ const BusManagement = () => {
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleModalSubmit}
                 initialData={editingBus}
+            />
+
+            <BusDetailModal
+                isOpen={isDetailModalOpen}
+                onClose={() => setIsDetailModalOpen(false)}
+                bus={selectedBusDetail}
             />
         </div>
     );
