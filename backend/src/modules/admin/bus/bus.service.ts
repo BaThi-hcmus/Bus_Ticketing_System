@@ -8,6 +8,7 @@ import { FilterStatus } from '../../../utils/filterStatus.util';
 import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
+import { ConfigModule } from '@nestjs/config';
 
 @Injectable()
 export class BusService {
@@ -169,6 +170,22 @@ export class BusService {
         await this.busRepo.update(
             { id: id },
             { deleted: true }
+        )
+    }
+
+    async changeStatusOne(status: string, id: number): Promise<void> {
+        //kiểm tra bus có tồn tại hay không
+        const isBusExist = await this.busRepo.findOne({
+            where: { id: id, deleted: false }
+        })
+
+        if (!isBusExist) {
+            throw new ConflictException(`Không tồn tại bus có id: ${id}`);
+        }
+
+        await this.busRepo.update(
+            { id: id },
+            { status: status }
         )
     }
 }

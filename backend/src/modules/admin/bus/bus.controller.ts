@@ -59,4 +59,13 @@ export class BusController {
       message: 'Xóa bus thành công',
     }
   }
+
+  @Patch('changeStatusOne/:status/:id')
+  async changeStatusOne(@Param('status') status: string, @Param('id') id: number) {
+    const result = await this.busService.changeStatusOne(status, id);
+
+    return {
+      message: 'Cập nhật trạng thái bus thành công',
+    }
+  }
 }
