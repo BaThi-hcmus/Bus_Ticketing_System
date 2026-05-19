@@ -95,7 +95,8 @@ export class BusService {
             filterStatusObject: filterStatusObject,
             searchResult: searchResult,
             paginationObject: paginationObject,
-            sortType: sortType
+            sortType: sortType,
+            sortList: sortList
         };
     }
 
