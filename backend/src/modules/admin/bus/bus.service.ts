@@ -131,7 +131,8 @@ export class BusService {
             throw new NotFoundException(`Không tìm thấy xe bus có ID [${id}] để cập nhật`);
         }
 
-        const licensePlate = editBusDto.licensePlate;
+        // Dùng dấu ? để tránh lỗi khi Frontend gửi Body rỗng (như lúc chỉ gửi {})
+        const licensePlate = editBusDto?.licensePlate;
 
         // 2. Kiểm tra trùng lặp biển số xe với các xe khác
         if (licensePlate) {

@@ -12,7 +12,7 @@ const BusManagement = () => {
     const [filterStatusOptions, setFilterStatusOptions] = useState([]);
     const [sortList, setSortList] = useState([]);
     const [paginationObj, setPaginationObj] = useState(null);
-    
+
     // UI states
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -37,13 +37,13 @@ const BusManagement = () => {
                     sortType: sortType || undefined
                 }
             });
-            
+
             const data = response.data;
             setBuses(data.data || []);
             setFilterStatusOptions(data.filterStatusObject || []);
             setPaginationObj(data.paginationObject);
             if (data.sortList) setSortList(data.sortList);
-            
+
         } catch (err) {
             setError(err.message || 'Lỗi khi tải danh sách xe bus');
         } finally {
@@ -85,10 +85,10 @@ const BusManagement = () => {
     };
 
     const handleDeleteClick = async (id) => {
-        if (window.confirm('Bạn có chắc chắn muốn xóa (xóa mềm) xe bus này không?')) {
+        if (window.confirm('Bạn có chắc chắn muốn xóa xe bus này không?')) {
             try {
-                // Delete API calls
-                await api.delete(`/admin/bus/delete/${id}`);
+                // Gọi API PATCH và gửi body { deleted: true } để thực hiện xóa mềm
+                await api.patch(`/admin/bus/edit/${id}`, { deleted: true });
                 fetchBuses(); // Reload list
             } catch (err) {
                 alert(err.message || 'Lỗi khi xóa xe bus');
@@ -121,7 +121,7 @@ const BusManagement = () => {
 
             {error && <div className={styles.errorAlert}>{error}</div>}
 
-            <BusFilter 
+            <BusFilter
                 onSearch={handleSearch}
                 onStatusChange={handleStatusChange}
                 onSortChange={handleSortChange}
@@ -134,20 +134,20 @@ const BusManagement = () => {
                 <div className={styles.loadingWrapper}>Đang tải dữ liệu...</div>
             ) : (
                 <>
-                    <BusTable 
-                        buses={buses} 
+                    <BusTable
+                        buses={buses}
                         onEdit={handleEditClick}
                         onDelete={handleDeleteClick}
                     />
-                    
-                    <Pagination 
+
+                    <Pagination
                         paginationObject={paginationObj}
                         onPageChange={handlePageChange}
                     />
                 </>
             )}
 
-            <BusModal 
+            <BusModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleModalSubmit}
