@@ -6,4 +6,6 @@ export class EditRouteDto {
     status?: string;
     deleted?: boolean;
     stations?: { stationId: number; distanceFromStart: number }[];
+    routeGeometry?: string;
+    waypoints?: string;
 }

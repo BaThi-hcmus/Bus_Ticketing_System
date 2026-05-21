@@ -21,6 +21,14 @@ export class Station {
     @Column({ default: false })
     deleted: boolean;
 
+    // Tọa độ Vĩ độ (Latitude)
+    @Column({ type: 'float', nullable: true })
+    lat: number;
+
+    // Tọa độ Kinh độ (Longitude)
+    @Column({ type: 'float', nullable: true })
+    lng: number;
+
     @CreateDateColumn({ type: 'date' })
     createdAt: Date;
 

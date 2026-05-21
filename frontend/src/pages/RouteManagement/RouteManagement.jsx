@@ -32,7 +32,7 @@ const RouteManagement = () => {
     const fetchStations = async () => {
         try {
             const response = await api.get('/admin/station');
-            setStationList(response.data.data || []);
+            setStationList(response.data || []);
         } catch (err) {
             console.error('Không thể tải danh sách bến xe', err);
         }

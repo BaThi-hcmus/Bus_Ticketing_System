@@ -4,4 +4,6 @@ export class CreateRouteDto {
     distanceKm: number;
     estimatedDuration: number;
     stations: { stationId: number; distanceFromStart: number }[];
+    routeGeometry?: string;
+    waypoints?: string;
 }

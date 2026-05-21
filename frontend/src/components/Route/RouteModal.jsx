@@ -1,18 +1,141 @@
-import React, { useState, useEffect } from 'react';
-import { FaTrash, FaPlus } from 'react-icons/fa';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { FaTrash, FaPlus, FaTimes, FaMapMarkerAlt } from 'react-icons/fa';
+import { MapContainer, TileLayer, useMap, useMapEvents, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
+import 'leaflet-routing-machine';
 import styles from './RouteModal.module.css';
+import api from '../../services/api';
+
+// Fix leaflet default icons issue in React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Component to handle routing logic on the map
+const RoutingMachine = ({ departureStation, destinationStation, initialWaypoints, onRouteFound }) => {
+    const map = useMap();
+    const routingControlRef = useRef(null);
+
+    useEffect(() => {
+        if (!departureStation || !destinationStation) {
+            if (routingControlRef.current) {
+                map.removeControl(routingControlRef.current);
+                routingControlRef.current = null;
+            }
+            return;
+        }
+
+        // Clean up previous control
+        if (routingControlRef.current) {
+            map.removeControl(routingControlRef.current);
+        }
+
+        // Build waypoints array
+        let waypoints = [];
+        if (initialWaypoints && initialWaypoints.length > 0) {
+            waypoints = initialWaypoints.map(wp => L.latLng(wp.lat, wp.lng));
+        } else {
+            waypoints = [
+                L.latLng(departureStation.lat, departureStation.lng),
+                L.latLng(destinationStation.lat, destinationStation.lng)
+            ];
+        }
+
+        // Initialize Routing Control with local OSRM
+        const routingControl = L.Routing.control({
+            waypoints: waypoints,
+            router: L.Routing.osrmv1({
+                serviceUrl: 'http://localhost:5000/route/v1',
+                profile: 'driving'
+            }),
+            routeWhileDragging: true,
+            show: false, // hide the textual itinerary panel
+            addWaypoints: true, // Allow user to add waypoints by dragging the line
+            fitSelectedRoutes: true,
+            lineOptions: {
+                styles: [{ color: '#3b82f6', opacity: 0.8, weight: 6 }]
+            },
+            createMarker: function() { return null; } // We don't need default markers, we can add our own or just let the line show
+        }).addTo(map);
+
+        routingControl.on('routesfound', function (e) {
+            const routes = e.routes;
+            const route = routes[0];
+
+            // Extract the dragged waypoints
+            const wp = routingControl.getWaypoints().filter(w => w.latLng).map(w => ({ lat: w.latLng.lat, lng: w.latLng.lng }));
+            
+            // Extract route geometry for backend storage
+            const routeGeometry = JSON.stringify(route.coordinates);
+            
+            // Calculate distance & duration
+            const distanceKm = (route.summary.totalDistance / 1000).toFixed(1);
+            const durationMin = Math.round(route.summary.totalTime / 60);
+
+            onRouteFound({
+                distanceKm: parseFloat(distanceKm),
+                estimatedDuration: durationMin,
+                waypoints: wp,
+                routeGeometry: routeGeometry
+            });
+        });
+
+        routingControlRef.current = routingControl;
+
+        return () => {
+            if (routingControlRef.current) {
+                map.removeControl(routingControlRef.current);
+            }
+        };
+    }, [map, departureStation, destinationStation, initialWaypoints]);
+
+    return null;
+};
+
+// Component to handle map clicks for adding stations
+const MapClickHandler = ({ isAddStationMode, onMapClick }) => {
+    useMapEvents({
+        click(e) {
+            if (isAddStationMode) {
+                onMapClick(e.latlng);
+            }
+        }
+    });
+    return null;
+};
 
 const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }) => {
     const [formData, setFormData] = useState({
         departureLocation: '',
         destinationLocation: '',
         distanceKm: '',
-        estimatedDuration: ''
+        estimatedDuration: '',
+        routeGeometry: '',
+        waypoints: ''
     });
     
     // stations array: { stationId: number, distanceFromStart: number }
     const [stations, setStations] = useState([]);
+    
+    // Map specific states
+    const [departureStation, setDepartureStation] = useState(null);
+    const [destinationStation, setDestinationStation] = useState(null);
+    const [initialMapWaypoints, setInitialMapWaypoints] = useState(null);
+    const [isAddStationMode, setIsAddStationMode] = useState(false);
+    
+    // For updating local station list with dynamically created stations
+    const [localStationList, setLocalStationList] = useState([]);
+
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        setLocalStationList(stationList);
+    }, [stationList]);
 
     useEffect(() => {
         if (isOpen) {
@@ -21,10 +144,30 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
                     departureLocation: initialData.departureLocation || '',
                     destinationLocation: initialData.destinationLocation || '',
                     distanceKm: initialData.distanceKm || '',
-                    estimatedDuration: initialData.estimatedDuration || ''
+                    estimatedDuration: initialData.estimatedDuration || '',
+                    routeGeometry: initialData.routeGeometry || '',
+                    waypoints: initialData.waypoints || ''
                 });
                 
-                // Nạp danh sách trạm nếu đang Edit
+                // Parse waypoints from JSON if editing
+                if (initialData.waypoints) {
+                    try {
+                        const parsedWp = JSON.parse(initialData.waypoints);
+                        setInitialMapWaypoints(parsedWp);
+                    } catch (e) {
+                        console.error('Failed to parse waypoints', e);
+                    }
+                } else {
+                    setInitialMapWaypoints(null);
+                }
+                
+                // Find and set departure and destination stations to render the map route
+                const dep = localStationList.find(s => s.name === initialData.departureLocation);
+                const dest = localStationList.find(s => s.name === initialData.destinationLocation);
+                setDepartureStation(dep || null);
+                setDestinationStation(dest || null);
+
+                // Load route stations
                 if (initialData.routeStations && initialData.routeStations.length > 0) {
                     const sorted = [...initialData.routeStations].sort((a,b) => a.stopOrder - b.stopOrder);
                     setStations(sorted.map(s => ({
@@ -39,19 +182,35 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
                     departureLocation: '',
                     destinationLocation: '',
                     distanceKm: '',
-                    estimatedDuration: ''
+                    estimatedDuration: '',
+                    routeGeometry: '',
+                    waypoints: ''
                 });
                 setStations([]);
+                setDepartureStation(null);
+                setDestinationStation(null);
+                setInitialMapWaypoints(null);
             }
+            setIsAddStationMode(false);
         }
-    }, [isOpen, initialData]);
+    }, [isOpen, initialData, localStationList]);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+    const handleDepartureChange = (e) => {
+        const value = e.target.value; // It is station name
+        const station = localStationList.find(s => s.name === value);
+        
+        setFormData(prev => ({ ...prev, departureLocation: value }));
+        setDepartureStation(station || null);
+        setInitialMapWaypoints(null); // Reset waypoints when changing endpoints
+    };
+
+    const handleDestinationChange = (e) => {
+        const value = e.target.value;
+        const station = localStationList.find(s => s.name === value);
+        
+        setFormData(prev => ({ ...prev, destinationLocation: value }));
+        setDestinationStation(station || null);
+        setInitialMapWaypoints(null); // Reset waypoints when changing endpoints
     };
 
     const handleAddStation = () => {
@@ -66,6 +225,61 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
         const newStations = [...stations];
         newStations[index][field] = value;
         setStations(newStations);
+    };
+
+    // Callback from RoutingMachine when route is calculated/dragged
+    const handleRouteFound = useCallback((routeData) => {
+        setFormData(prev => ({
+            ...prev,
+            distanceKm: routeData.distanceKm,
+            estimatedDuration: routeData.estimatedDuration,
+            routeGeometry: routeData.routeGeometry,
+            waypoints: JSON.stringify(routeData.waypoints)
+        }));
+    }, []);
+
+    // Handle map click to create a new station via Reverse Geocoding
+    const handleMapClick = async (latlng) => {
+        if (!isAddStationMode) return;
+
+        setLoading(true);
+        try {
+            // Call Nominatim API for Reverse Geocoding
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`);
+            const data = await response.json();
+            
+            const address = data.display_name || 'Không xác định';
+            const shortName = address.split(',')[0] || 'Trạm Mới';
+            const stationName = `Trạm dừng - ${shortName}`;
+
+            // Create station via API
+            const createRes = await api.post('/admin/station/create', {
+                name: stationName,
+                address: address,
+                lat: latlng.lat,
+                lng: latlng.lng
+            });
+
+            const newStation = createRes.data;
+
+            // Update local station list and add it to route's stations
+            setLocalStationList(prev => [...prev, newStation]);
+            
+            setStations(prev => [...prev, {
+                stationId: newStation.id,
+                distanceFromStart: 0 // Default to 0, admin can adjust
+            }]);
+
+            // Turn off mode
+            setIsAddStationMode(false);
+            alert(`Thêm trạm thành công: ${stationName}`);
+
+        } catch (error) {
+            console.error('Reverse Geocoding error:', error);
+            alert('Có lỗi xảy ra khi tạo trạm dừng từ bản đồ.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -103,132 +317,219 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
 
     return (
         <div className={styles.overlay} onClick={onClose}>
-            <div className={styles.modal} style={{ maxWidth: '800px', width: '90%' }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modal} onClick={e => e.stopPropagation()}>
                 <div className={styles.header}>
-                    <h2>{initialData ? 'Chỉnh sửa Tuyến đường' : 'Thêm Tuyến đường mới'}</h2>
-                    <button className={styles.closeBtn} onClick={onClose}>&times;</button>
+                    <h2 className={styles.title}>
+                        {initialData ? 'Chỉnh sửa Tuyến đường' : 'Thêm Tuyến đường mới'}
+                    </h2>
+                    <button type="button" className={styles.closeBtn} onClick={onClose}>
+                        <FaTimes />
+                    </button>
                 </div>
                 
-                <form className={styles.form} onSubmit={handleSubmit}>
-                    <div className={styles.formGrid} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                        <div className={styles.formGroup}>
-                            <label>Điểm đi (Tỉnh/Thành phố) <span className={styles.required}>*</span></label>
-                            <input 
-                                type="text" 
-                                name="departureLocation"
-                                value={formData.departureLocation}
-                                onChange={handleChange}
-                                placeholder="VD: TP. Hồ Chí Minh"
-                                required
-                            />
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label>Điểm đến (Tỉnh/Thành phố) <span className={styles.required}>*</span></label>
-                            <input 
-                                type="text" 
-                                name="destinationLocation"
-                                value={formData.destinationLocation}
-                                onChange={handleChange}
-                                placeholder="VD: Đà Lạt"
-                                required
-                            />
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label>Khoảng cách (km) <span className={styles.required}>*</span></label>
-                            <input 
-                                type="number" 
-                                name="distanceKm"
-                                value={formData.distanceKm}
-                                onChange={handleChange}
-                                placeholder="VD: 300"
-                                min="1"
-                                required
-                            />
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label>Thời gian di chuyển (phút) <span className={styles.required}>*</span></label>
-                            <input 
-                                type="number" 
-                                name="estimatedDuration"
-                                value={formData.estimatedDuration}
-                                onChange={handleChange}
-                                placeholder="VD: 480"
-                                min="1"
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid #eee' }} />
-                    
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                        <h3 style={{ margin: 0, fontSize: '16px' }}>Lộ trình các trạm dừng <span className={styles.required}>*</span></h3>
-                        <button type="button" onClick={handleAddStation} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                            <FaPlus size={12} /> Thêm trạm
-                        </button>
-                    </div>
-
-                    {stations.length === 0 ? (
-                        <div style={{ padding: '20px', textAlign: 'center', background: '#f8fafc', borderRadius: '6px', color: '#64748b' }}>
-                            Chưa có trạm dừng nào. Vui lòng thêm ít nhất 2 trạm (Điểm đầu và Điểm cuối).
-                        </div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto', paddingRight: '5px' }}>
-                            {stations.map((station, index) => (
-                                <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                                    <div style={{ width: '30px', fontWeight: 'bold', color: '#475569', alignSelf: 'center', paddingTop: '20px' }}>
-                                        #{index + 1}
-                                    </div>
-                                    <div className={styles.formGroup} style={{ flex: 2, marginBottom: 0 }}>
-                                        <label>Tên Bến xe / Trạm dừng</label>
+                <div className={styles.modalLayout}>
+                    {/* Left Panel: Form */}
+                    <div className={styles.leftPanel}>
+                        <form className={styles.form} onSubmit={handleSubmit} id="route-form">
+                            <div className={styles.body}>
+                                <div className={styles.formGrid}>
+                                    <div className={styles.formGroup}>
+                                        <label>Điểm đi <span className={styles.required}>*</span></label>
                                         <select 
-                                            value={station.stationId} 
-                                            onChange={(e) => handleStationChange(index, 'stationId', e.target.value)}
+                                            className={styles.formControl}
+                                            value={formData.departureLocation}
+                                            onChange={handleDepartureChange}
                                             required
-                                            style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
                                         >
-                                            <option value="">-- Chọn Trạm --</option>
-                                            {stationList.map(st => (
-                                                <option key={st.id} value={st.id}>{st.name} ({st.address})</option>
+                                            <option value="">-- Chọn Điểm đi --</option>
+                                            {localStationList.map(st => (
+                                                <option key={`dep-${st.id}`} value={st.name}>{st.name}</option>
                                             ))}
                                         </select>
                                     </div>
-                                    <div className={styles.formGroup} style={{ flex: 1, marginBottom: 0 }}>
-                                        <label>Khoảng cách từ gốc (km)</label>
+
+                                    <div className={styles.formGroup}>
+                                        <label>Điểm đến <span className={styles.required}>*</span></label>
+                                        <select 
+                                            className={styles.formControl}
+                                            value={formData.destinationLocation}
+                                            onChange={handleDestinationChange}
+                                            required
+                                        >
+                                            <option value="">-- Chọn Điểm đến --</option>
+                                            {localStationList.map(st => (
+                                                <option key={`dest-${st.id}`} value={st.name}>{st.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className={styles.formGroup}>
+                                        <label>Khoảng cách OSRM (km) <span className={styles.required}>*</span></label>
                                         <input 
                                             type="number" 
-                                            value={station.distanceFromStart}
-                                            onChange={(e) => handleStationChange(index, 'distanceFromStart', e.target.value)}
-                                            placeholder="VD: 0"
+                                            name="distanceKm"
+                                            className={styles.formControl}
+                                            value={formData.distanceKm}
+                                            onChange={(e) => setFormData(p => ({...p, distanceKm: e.target.value}))}
+                                            placeholder="Được tính tự động"
                                             min="0"
+                                            step="0.1"
                                             required
                                         />
                                     </div>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => handleRemoveStation(index)}
-                                        style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px', borderRadius: '4px', cursor: 'pointer', height: '37px' }}
-                                        title="Xóa trạm"
-                                    >
-                                        <FaTrash size={14} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
 
-                    <div className={styles.actions} style={{ marginTop: '20px' }}>
-                        <button type="button" className={styles.cancelBtn} onClick={onClose} disabled={loading}>
-                            Hủy bỏ
-                        </button>
-                        <button type="submit" className={styles.submitBtn} disabled={loading || stations.length < 2}>
-                            {loading ? 'Đang lưu...' : (initialData ? 'Lưu thay đổi' : 'Tạo Tuyến đường')}
-                        </button>
+                                    <div className={styles.formGroup}>
+                                        <label>T.gian ước tính (phút) <span className={styles.required}>*</span></label>
+                                        <input 
+                                            type="number" 
+                                            name="estimatedDuration"
+                                            className={styles.formControl}
+                                            value={formData.estimatedDuration}
+                                            onChange={(e) => setFormData(p => ({...p, estimatedDuration: e.target.value}))}
+                                            placeholder="Được tính tự động"
+                                            min="1"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <hr className={styles.divider} />
+                                
+                                <div className={styles.stationHeader}>
+                                    <h3 className={styles.stationTitle}>
+                                        Lộ trình các trạm dừng <span className={styles.required}>*</span>
+                                    </h3>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <button 
+                                            type="button" 
+                                            className={styles.addStationBtn} 
+                                            onClick={() => setIsAddStationMode(!isAddStationMode)}
+                                            style={{ backgroundColor: isAddStationMode ? '#fee2e2' : '', borderColor: isAddStationMode ? '#fca5a5' : '', color: isAddStationMode ? '#ef4444' : '' }}
+                                        >
+                                            <FaMapMarkerAlt size={12} /> {isAddStationMode ? 'Hủy click map' : 'Click map thêm trạm'}
+                                        </button>
+                                        <button type="button" className={styles.addStationBtn} onClick={handleAddStation}>
+                                            <FaPlus size={12} /> Thêm trạm thủ công
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {isAddStationMode && (
+                                    <div style={{ padding: '10px', backgroundColor: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>
+                                        Chế độ Map: Vui lòng click vào đường đi hoặc bất kỳ đâu trên bản đồ bên cạnh để tạo trạm dừng mới (Dùng Reverse Geocoding).
+                                    </div>
+                                )}
+
+                                {stations.length === 0 ? (
+                                    <div className={styles.emptyState}>
+                                        Chưa có trạm dừng nào. Vui lòng thêm ít nhất 2 trạm (Điểm đầu và Điểm cuối).
+                                    </div>
+                                ) : (
+                                    <div className={styles.stationList}>
+                                        {stations.map((station, index) => (
+                                            <div key={index} className={styles.stationItem}>
+                                                <div className={styles.stationIndex}>
+                                                    #{index + 1}
+                                                </div>
+                                                
+                                                <div className={styles.stationInputGroup}>
+                                                    <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>
+                                                        Tên Bến xe / Trạm dừng
+                                                    </label>
+                                                    <select 
+                                                        className={styles.formControl}
+                                                        value={station.stationId} 
+                                                        onChange={(e) => handleStationChange(index, 'stationId', e.target.value)}
+                                                        required
+                                                    >
+                                                        <option value="">-- Chọn Trạm --</option>
+                                                        {localStationList.map(st => (
+                                                            <option key={st.id} value={st.id}>{st.name} ({st.address})</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                <div className={styles.distanceInputGroup}>
+                                                    <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '8px', display: 'block' }}>
+                                                        Khoảng cách từ gốc
+                                                    </label>
+                                                    <input 
+                                                        type="number" 
+                                                        className={styles.formControl}
+                                                        value={station.distanceFromStart}
+                                                        onChange={(e) => handleStationChange(index, 'distanceFromStart', e.target.value)}
+                                                        placeholder="VD: 0"
+                                                        min="0"
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <button 
+                                                    type="button" 
+                                                    className={styles.deleteStationBtn}
+                                                    onClick={() => handleRemoveStation(index)}
+                                                    title="Xóa trạm"
+                                                >
+                                                    <FaTrash size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </form>
                     </div>
-                </form>
+                    
+                    {/* Right Panel: Map */}
+                    <div className={styles.rightPanel}>
+                        <MapContainer 
+                            center={[16.047079, 108.206230]} // Default center Vietnam (Da Nang)
+                            zoom={5} 
+                            className={styles.mapContainer}
+                        >
+                            <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                            
+                            <RoutingMachine 
+                                departureStation={departureStation}
+                                destinationStation={destinationStation}
+                                initialWaypoints={initialMapWaypoints}
+                                onRouteFound={handleRouteFound}
+                            />
+
+                            <MapClickHandler 
+                                isAddStationMode={isAddStationMode}
+                                onMapClick={handleMapClick}
+                            />
+
+                            {/* Show markers for stations added to the route */}
+                            {stations.map((s, idx) => {
+                                const st = localStationList.find(loc => loc.id == s.stationId);
+                                if (st && st.lat && st.lng) {
+                                    return (
+                                        <Marker key={idx} position={[st.lat, st.lng]}>
+                                            <Popup>
+                                                Trạm #{idx + 1}: {st.name}
+                                            </Popup>
+                                        </Marker>
+                                    )
+                                }
+                                return null;
+                            })}
+                        </MapContainer>
+                    </div>
+                </div>
+
+                <div className={styles.footer}>
+                    <button type="button" className={styles.cancelBtn} onClick={onClose} disabled={loading}>
+                        Hủy bỏ
+                    </button>
+                    <button type="submit" form="route-form" className={styles.submitBtn} disabled={loading || stations.length < 2}>
+                        {loading ? 'Đang xử lý...' : (initialData ? 'Lưu thay đổi' : 'Tạo Tuyến đường')}
+                    </button>
+                </div>
             </div>
         </div>
     );

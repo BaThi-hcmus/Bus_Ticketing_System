@@ -31,6 +31,14 @@ export class Route {
     @Column({ default: false })
     deleted: boolean;
 
+    // Chuỗi mã hóa đường đi (Polyline từ OSRM)
+    @Column({ type: 'text', nullable: true })
+    routeGeometry: string;
+
+    // Chuỗi JSON lưu danh sách các điểm kéo thả (waypoints) để vẽ lại đường đi
+    @Column({ type: 'text', nullable: true })
+    waypoints: string;
+
     @CreateDateColumn({ type: 'date' })
     createdAt: Date;
 

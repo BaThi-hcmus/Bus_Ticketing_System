@@ -9,8 +9,6 @@ import { FilterStatus } from '../../../utils/filterStatus.util';
 import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
-import { fromReadableStreamLike } from 'rxjs/internal/observable/innerFrom';
-import { create } from 'domain';
 
 @Injectable()
 export class RouteService {
@@ -104,11 +102,13 @@ export class RouteService {
 
         // Nếu không trùng thì thực hiện thêm vào DB
         // Thêm route
-        const newRoute = await this.routeRepo.create({
+        const newRoute = this.routeRepo.create({
             departureLocation: createRouteDto.departureLocation,
             destinationLocation: createRouteDto.destinationLocation,
             distanceKm: createRouteDto.distanceKm,
-            estimatedDuration: createRouteDto.estimatedDuration
+            estimatedDuration: createRouteDto.estimatedDuration,
+            routeGeometry: createRouteDto.routeGeometry,
+            waypoints: createRouteDto.waypoints
         })
 
         const savedRoute = await this.routeRepo.save(newRoute);
@@ -179,21 +179,23 @@ export class RouteService {
         }
 
         //Cập nhật routeStations
-        if (editRouteDto.stations && editRouteDto.stations.length > 0) {
+        if (editRouteDto.stations) {
             //xóa stations cũ
             await this.routeStationRepo.delete({ routeId: id });
 
             // Thêm stations mới 
-            const newRouteStations = [...editRouteDto.stations].map((s, index) => {
-                return this.routeStationRepo.create({
-                    routeId: id,
-                    stationId: s.stationId,
-                    distanceFromStart: s.distanceFromStart,
-                    stopOrder: index + 1
+            if (editRouteDto.stations.length > 0) {
+                const newRouteStations = [...editRouteDto.stations].map((s, index) => {
+                    return this.routeStationRepo.create({
+                        routeId: id,
+                        stationId: s.stationId,
+                        distanceFromStart: s.distanceFromStart,
+                        stopOrder: index + 1
+                    })
                 })
-            })
-
-            await this.routeStationRepo.save(newRouteStations);
+    
+                await this.routeStationRepo.save(newRouteStations);
+            }
         }
     }
 
