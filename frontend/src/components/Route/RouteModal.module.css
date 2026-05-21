@@ -61,6 +61,20 @@
     z-index: 0;
 }
 
+/* Khi ở chế độ "click map thêm trạm":
+   Tắt pointer-events trên TẤT CẢ các thành phần tương tác của Leaflet (đường vẽ, chấm tròn waypoint)
+   để click có thể xuyên qua tới map layer bên dưới,
+   cho phép MapClickHandler bắt được sự kiện click */
+:global(.add-station-mode) .leaflet-overlay-pane *,
+:global(.add-station-mode) .leaflet-marker-pane * {
+    pointer-events: none !important;
+}
+
+/* Đổi con trỏ chuột thành dấu chữ thập khi ở chế độ thêm trạm */
+:global(.add-station-mode) {
+    cursor: crosshair !important;
+}
+
 @keyframes slideUp {
     from { transform: translateY(30px) scale(0.98); opacity: 0; }
     to { transform: translateY(0) scale(1); opacity: 1; }

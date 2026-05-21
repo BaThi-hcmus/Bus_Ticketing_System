@@ -16,10 +16,24 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Component to handle routing logic on the map
-const RoutingMachine = ({ departureStation, destinationStation, initialWaypoints, onRouteFound }) => {
+// Component xử lý logic vẽ đường đi trên bản đồ bằng OSRM
+const RoutingMachine = ({ departureStation, destinationStation, initialWaypoints, onRouteFound, isAddStationMode }) => {
     const map = useMap();
     const routingControlRef = useRef(null);
+    // Cờ đánh dấu đã zoom fit lần đầu chưa - tránh auto-zoom mỗi lần kéo thả
+    const hasFittedBoundsRef = useRef(false);
+
+    // Khi bật/tắt chế độ "click map thêm trạm":
+    // - Bật: tắt pointer-events trên đường vẽ SVG để click xuyên qua tới map
+    // - Tắt: khôi phục pointer-events để admin có thể kéo thả waypoint
+    useEffect(() => {
+        const container = map.getContainer();
+        if (isAddStationMode) {
+            container.classList.add('add-station-mode');
+        } else {
+            container.classList.remove('add-station-mode');
+        }
+    }, [isAddStationMode, map]);
 
     useEffect(() => {
         if (!departureStation || !destinationStation) {
@@ -27,15 +41,17 @@ const RoutingMachine = ({ departureStation, destinationStation, initialWaypoints
                 map.removeControl(routingControlRef.current);
                 routingControlRef.current = null;
             }
+            hasFittedBoundsRef.current = false;
             return;
         }
 
-        // Clean up previous control
+        // Xóa routing control cũ nếu có
         if (routingControlRef.current) {
             map.removeControl(routingControlRef.current);
         }
+        hasFittedBoundsRef.current = false;
 
-        // Build waypoints array
+        // Xây dựng mảng waypoints (điểm neo trên đường đi)
         let waypoints = [];
         if (initialWaypoints && initialWaypoints.length > 0) {
             waypoints = initialWaypoints.map(wp => L.latLng(wp.lat, wp.lng));
@@ -46,34 +62,75 @@ const RoutingMachine = ({ departureStation, destinationStation, initialWaypoints
             ];
         }
 
-        // Initialize Routing Control with local OSRM
+        // Khởi tạo Routing Control kết nối OSRM cục bộ với cấu hình tùy chỉnh plan
         const routingControl = L.Routing.control({
-            waypoints: waypoints,
             router: L.Routing.osrmv1({
                 serviceUrl: 'http://localhost:5000/route/v1',
                 profile: 'driving'
             }),
-            routeWhileDragging: true,
-            show: false, // hide the textual itinerary panel
-            addWaypoints: true, // Allow user to add waypoints by dragging the line
-            fitSelectedRoutes: true,
+            plan: L.Routing.plan(waypoints, {
+                createMarker: function(i, wp, n) {
+                    // Không tạo marker kéo thả cho điểm đầu và cuối (để giữ cố định 2 đầu)
+                    if (i === 0 || i === n - 1) {
+                        return null; 
+                    }
+                    // Tạo một chấm tròn nhỏ (giống Google Maps) cho các điểm trung gian (được thêm khi kéo đường)
+                    const marker = L.marker(wp.latLng, {
+                        draggable: true,
+                        icon: L.divIcon({
+                            className: 'intermediate-waypoint',
+                            html: '<div style="background-color: white; border: 3px solid #3b82f6; width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.4); cursor: grab; margin-left: -7px; margin-top: -7px;"></div>',
+                            iconSize: [14, 14],
+                            iconAnchor: [0, 0] // Centered by negative margin in HTML
+                        })
+                    });
+                    
+                    // Click vào chấm tròn để xóa waypoint đó
+                    marker.on('click', () => {
+                        if (routingControlRef.current) {
+                            const currentWaypoints = routingControlRef.current.getWaypoints();
+                            // Loại bỏ waypoint vừa click
+                            const newWaypoints = currentWaypoints.filter((_, index) => index !== i);
+                            routingControlRef.current.setWaypoints(newWaypoints);
+                        }
+                    });
+
+                    return marker;
+                },
+                addWaypoints: true,
+                draggableWaypoints: true
+            }),
+            routeWhileDragging: true,      // Tính lại route khi đang kéo
+            show: false,                    // Ẩn bảng chỉ dẫn lộ trình dạng text
+            fitSelectedRoutes: false,       // TẮT auto-zoom
             lineOptions: {
-                styles: [{ color: '#3b82f6', opacity: 0.8, weight: 6 }]
-            },
-            createMarker: function() { return null; } // We don't need default markers, we can add our own or just let the line show
+                styles: [{ color: '#3b82f6', opacity: 0.8, weight: 6 }],
+                addWaypoints: true          // Cho phép click/kéo line để thêm waypoint
+            }
         }).addTo(map);
 
+        // Lắng nghe sự kiện khi OSRM trả về route thành công
         routingControl.on('routesfound', function (e) {
             const routes = e.routes;
             const route = routes[0];
 
-            // Extract the dragged waypoints
-            const wp = routingControl.getWaypoints().filter(w => w.latLng).map(w => ({ lat: w.latLng.lat, lng: w.latLng.lng }));
+            // CHỈ zoom fit bounds 1 lần duy nhất khi route được tính lần đầu
+            // Các lần kéo thả sau sẽ KHÔNG tự thu nhỏ bản đồ
+            if (!hasFittedBoundsRef.current) {
+                const bounds = L.latLngBounds(route.coordinates);
+                map.fitBounds(bounds, { padding: [50, 50] });
+                hasFittedBoundsRef.current = true;
+            }
+
+            // Lấy danh sách waypoints hiện tại (bao gồm cả các điểm admin đã kéo thả)
+            const wp = routingControl.getWaypoints()
+                .filter(w => w.latLng)
+                .map(w => ({ lat: w.latLng.lat, lng: w.latLng.lng }));
             
-            // Extract route geometry for backend storage
+            // Lưu toàn bộ tọa độ đường đi dạng JSON để gửi lên backend
             const routeGeometry = JSON.stringify(route.coordinates);
             
-            // Calculate distance & duration
+            // Tính khoảng cách (km) và thời gian ước tính (phút) từ OSRM
             const distanceKm = (route.summary.totalDistance / 1000).toFixed(1);
             const durationMin = Math.round(route.summary.totalTime / 60);
 
@@ -97,16 +154,73 @@ const RoutingMachine = ({ departureStation, destinationStation, initialWaypoints
     return null;
 };
 
-// Component to handle map clicks for adding stations
-const MapClickHandler = ({ isAddStationMode, onMapClick }) => {
-    useMapEvents({
-        click(e) {
-            if (isAddStationMode) {
-                onMapClick(e.latlng);
-            }
-        }
-    });
-    return null;
+// Component phủ lên toàn bộ bản đồ để chặn mọi thao tác kéo thả và chỉ bắt sự kiện click thêm trạm
+const AddStationOverlay = ({ isAddStationMode, onMapClick, routeGeometryJSON }) => {
+    const map = useMap();
+    
+    if (!isAddStationMode) return null;
+
+    return (
+        <div 
+            style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0, bottom: 0,
+                zIndex: 9999, // Phủ lên trên cùng, che mọi thứ của leaflet
+                cursor: 'crosshair',
+                backgroundColor: 'transparent'
+            }}
+            onMouseDown={(e) => {
+                // Chặn sự kiện truyền xuống leaflet-routing-machine
+                e.stopPropagation();
+                e.preventDefault();
+            }}
+            onMouseMove={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+            }}
+            onMouseUp={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+            }}
+            onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                
+                // Lấy tọa độ latlng từ con trỏ chuột
+                const latlng = map.mouseEventToLatLng(e.nativeEvent);
+                
+                let isOnRoute = false;
+                if (routeGeometryJSON) {
+                    try {
+                        const coords = JSON.parse(routeGeometryJSON);
+                        if (coords && coords.length > 0) {
+                            const clickPt = map.latLngToLayerPoint(latlng);
+                            let minDistance = Infinity;
+                            for (let i = 0; i < coords.length - 1; i++) {
+                                const p1 = map.latLngToLayerPoint(L.latLng(coords[i].lat, coords[i].lng));
+                                const p2 = map.latLngToLayerPoint(L.latLng(coords[i+1].lat, coords[i+1].lng));
+                                const dist = L.LineUtil.pointToSegmentDistance(clickPt, p1, p2);
+                                if (dist < minDistance) {
+                                    minDistance = dist;
+                                }
+                            }
+                            if (minDistance <= 25) { 
+                                isOnRoute = true;
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Lỗi tính toán khoảng cách route', err);
+                    }
+                }
+
+                if (isOnRoute) {
+                    onMapClick(latlng);
+                } else {
+                    alert('Vui lòng click TRỰC TIẾP lên đường đi màu xanh để thêm trạm!');
+                }
+            }}
+        />
+    );
 };
 
 const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }) => {
@@ -193,7 +307,8 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
             }
             setIsAddStationMode(false);
         }
-    }, [isOpen, initialData, localStationList]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, initialData]);
 
     const handleDepartureChange = (e) => {
         const value = e.target.value; // It is station name
@@ -497,11 +612,13 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
                                 destinationStation={destinationStation}
                                 initialWaypoints={initialMapWaypoints}
                                 onRouteFound={handleRouteFound}
+                                isAddStationMode={isAddStationMode}
                             />
 
-                            <MapClickHandler 
+                            <AddStationOverlay 
                                 isAddStationMode={isAddStationMode}
                                 onMapClick={handleMapClick}
+                                routeGeometryJSON={formData.routeGeometry}
                             />
 
                             {/* Show markers for stations added to the route */}
