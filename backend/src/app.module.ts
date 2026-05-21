@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BusModule } from './modules/admin/bus/bus.module';
+import { RouteModule } from './modules/admin/route/route.module';
+import { StationModule } from './modules/admin/station/station.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { BusModule } from './modules/admin/bus/bus.module';
       }),
     }),
     BusModule,
+    RouteModule,
+    StationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

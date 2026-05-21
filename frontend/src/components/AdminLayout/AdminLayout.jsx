@@ -18,10 +18,12 @@ const AdminLayout = () => {
                     >
                         <FaBus /> Quản lý Xe Bus
                     </NavLink>
-                    {/* Placeholder for future routes */}
-                    <div className={styles.navItem} style={{opacity: 0.5, cursor: 'not-allowed'}}>
+                    <NavLink 
+                        to="/admin/routes" 
+                        className={({isActive}) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
+                    >
                         <FaRoute /> Quản lý Tuyến đường
-                    </div>
+                    </NavLink>
                     <div className={styles.navItem} style={{opacity: 0.5, cursor: 'not-allowed'}}>
                         <FaUsers /> Quản lý Khách hàng
                     </div>

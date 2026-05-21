@@ -9,6 +9,7 @@ import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
 import { ConfigModule } from '@nestjs/config';
+import { EditMultiBusDto } from './dto/editMulti.bus.dto';
 
 @Injectable()
 export class BusService {

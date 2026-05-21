@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import AdminLayout from './components/AdminLayout/AdminLayout';
 import BusManagement from './pages/BusManagement/BusManagement';
 
+import RouteManagement from './pages/RouteManagement/RouteManagement';
+
 function App() {
   return (
     <Routes>
@@ -11,6 +13,7 @@ function App() {
       
       <Route path="/admin" element={<AdminLayout />}>
         <Route path="buses" element={<BusManagement />} />
+        <Route path="routes" element={<RouteManagement />} />
       </Route>
     </Routes>
   );
