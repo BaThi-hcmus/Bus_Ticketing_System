@@ -22,6 +22,16 @@ export class RouteController {
     }
   }
 
+  @Get('location/autocomplete')
+  async autocompleteLocation(@Query('q') query: string) {
+    const result = await this.routeService.autocompleteLocation(query);
+
+    return {
+      message: 'Lấy gợi ý địa điểm thành công',
+      data: result
+    }
+  }
+
   @Post('create')
   async createRoute(@Body() createRouteDto: CreateRouteDto) {
     const result = await this.routeService.createRoute(createRouteDto);

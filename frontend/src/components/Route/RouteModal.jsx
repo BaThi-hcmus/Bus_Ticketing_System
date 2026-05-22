@@ -16,6 +16,267 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// Component fix lỗi Leaflet render sai kích thước khi CSS transition thay đổi width
+const MapResizeFix = ({ isVisible }) => {
+    const map = useMap();
+    useEffect(() => {
+        let timeoutId;
+        if (isVisible) {
+            // Liên tục invalidate size trong suốt quá trình transition (0.6s)
+            const intervalId = setInterval(() => {
+                map.invalidateSize();
+            }, 50);
+            
+            timeoutId = setTimeout(() => {
+                clearInterval(intervalId);
+                map.invalidateSize();
+            }, 600);
+            
+            return () => {
+                clearInterval(intervalId);
+                clearTimeout(timeoutId);
+            };
+        }
+    }, [isVisible, map]);
+    return null;
+};
+
+// Component quản lý chọn Điểm Đi / Điểm Đến
+const EndpointSelector = ({ 
+    type, // 'departure' | 'destination'
+    label,
+    selectedLocation, // obj { name, address, lat, lng }
+    onSelect, // function(locationObj)
+    onClear,
+    pickingEndpoint, // current global picking state
+    setPickingEndpoint,
+    localStationList
+}) => {
+    // Component nội bộ để search trạm có sẵn
+    const ExistingStationSearch = () => {
+        const [searchTerm, setSearchTerm] = useState('');
+        const filtered = localStationList.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        return (
+            <div className={styles.locationSearchWrapper}>
+                <input
+                    type="text"
+                    className={styles.formControl}
+                    placeholder="Gõ để tìm trạm có sẵn..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    autoFocus
+                />
+                {searchTerm && filtered.length > 0 && (
+                    <ul className={styles.suggestionsList} style={{ display: 'block' }}>
+                        {filtered.map(st => (
+                            <li key={st.id} className={styles.suggestionItem} onClick={() => onSelect({ name: st.name, lat: st.lat, lng: st.lng })}>
+                                <strong>{st.name}</strong>
+                                <small>{st.address}</small>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+        );
+    };
+
+    if (selectedLocation) {
+        return (
+            <div className={styles.formGroup}>
+                <label>{label} <span className={styles.required}>*</span></label>
+                <div className={styles.selectedEndpointCard}>
+                    <div className={styles.selectedEndpointInfo}>
+                        <div className={styles.selectedEndpointName}>{selectedLocation.name}</div>
+                        {selectedLocation.address && <div className={styles.selectedEndpointAddress}>{selectedLocation.address}</div>}
+                    </div>
+                    <button type="button" className={styles.changeEndpointBtn} onClick={onClear}>
+                        Thay đổi
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (pickingEndpoint === `${type}_menu`) {
+        return (
+            <div className={styles.formGroup}>
+                <label>{label} <span className={styles.required}>*</span></label>
+                <div className={styles.selectorPopover}>
+                    <button type="button" className={styles.backBtn} onClick={() => setPickingEndpoint(null)}>
+                        ← Quay lại
+                    </button>
+                    <div className={styles.optionsMenu}>
+                        <div className={styles.optionItem} onClick={() => setPickingEndpoint(`${type}_existing`)}>
+                            <div className={styles.optionIcon}>🚉</div>
+                            <div className={styles.optionText}>
+                                <div className={styles.optionTitle}>Chọn Trạm Có Sẵn</div>
+                                <div className={styles.optionDesc}>Tìm và chọn từ danh sách trạm đã tạo</div>
+                            </div>
+                        </div>
+                        <div className={styles.optionItem} onClick={() => setPickingEndpoint(`${type}_custom`)}>
+                            <div className={styles.optionIcon}>📍</div>
+                            <div className={styles.optionText}>
+                                <div className={styles.optionTitle}>Tạo Địa Điểm Mới</div>
+                                <div className={styles.optionDesc}>Tìm kiếm địa danh hoặc chọn trực tiếp trên bản đồ</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (pickingEndpoint === `${type}_existing`) {
+        return (
+            <div className={styles.formGroup}>
+                <label>{label} <span className={styles.required}>*</span></label>
+                <div className={styles.selectorPopover}>
+                    <button type="button" className={styles.backBtn} onClick={() => setPickingEndpoint(`${type}_menu`)}>
+                        ← Quay lại
+                    </button>
+                    <ExistingStationSearch />
+                    <div style={{ fontSize: '0.8rem', color: '#16a34a', marginTop: '8px', padding: '8px', backgroundColor: '#f0fdf4', borderRadius: '6px' }}>
+                        💡 Bạn cũng có thể click trực tiếp vào marker xanh lá trên bản đồ bên cạnh.
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (pickingEndpoint === `${type}_custom` || pickingEndpoint === `${type}_custom_map`) {
+        return (
+            <div className={styles.formGroup}>
+                <label>{label} <span className={styles.required}>*</span></label>
+                <div className={styles.selectorPopover}>
+                    <button type="button" className={styles.backBtn} onClick={() => setPickingEndpoint(`${type}_menu`)}>
+                        ← Quay lại
+                    </button>
+                    <LocationSearchInput
+                        placeholder="Nhập tên bến xe, địa danh..."
+                        value=""
+                        onChange={() => {}}
+                        onSelectLocation={onSelect}
+                        isActiveMapPick={pickingEndpoint === `${type}_custom_map`}
+                        onPickOnMap={() => setPickingEndpoint(pickingEndpoint === `${type}_custom_map` ? `${type}_custom` : `${type}_custom_map`)}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    // Trạng thái mặc định: Hiển thị thẻ bấm
+    return (
+        <div className={styles.formGroup}>
+            <label>{label} <span className={styles.required}>*</span></label>
+            <div className={styles.endpointCard} onClick={() => setPickingEndpoint(`${type}_menu`)}>
+                <FaPlus style={{ color: '#94a3b8', fontSize: '1.2rem' }} />
+                <span className={styles.endpointCardText}>Chọn {label.toLowerCase()}</span>
+            </div>
+        </div>
+    );
+};
+
+// Component xử lý tìm kiếm và gợi ý địa điểm
+const LocationSearchInput = ({ value, onChange, onSelectLocation, onPickOnMap, placeholder, isActiveMapPick }) => {
+    const [query, setQuery] = useState(value);
+    const [suggestions, setSuggestions] = useState([]);
+    const [isOpen, setIsOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const wrapperRef = useRef(null);
+
+    useEffect(() => {
+        setQuery(value);
+    }, [value]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+        const fetchSuggestions = async () => {
+            if (!query || query.trim().length < 2) {
+                setSuggestions([]);
+                return;
+            }
+            // Không gọi API nếu query giống hệt value đã chọn
+            if (query === value) return;
+
+            setLoading(true);
+            try {
+                const res = await api.get(`/admin/route/location/autocomplete?q=${encodeURIComponent(query)}`);
+                if (res.data && res.data.data) {
+                    setSuggestions(res.data.data || []);
+                    setIsOpen(true);
+                }
+            } catch (error) {
+                console.error("Autocomplete error:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const timerId = setTimeout(fetchSuggestions, 500); // 500ms debounce
+        return () => clearTimeout(timerId);
+    }, [query, value]);
+
+    return (
+        <div className={styles.locationSearchWrapper} ref={wrapperRef}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                    type="text"
+                    className={styles.formControl}
+                    placeholder={placeholder}
+                    value={query}
+                    onChange={(e) => {
+                        setQuery(e.target.value);
+                        onChange(e.target.value);
+                    }}
+                    onFocus={() => { if (suggestions.length > 0) setIsOpen(true); }}
+                />
+                <button 
+                    type="button" 
+                    className={`${styles.mapPickBtn} ${isActiveMapPick ? styles.mapPickBtnActive : ''}`}
+                    onClick={onPickOnMap}
+                    title="Chọn trên bản đồ"
+                >
+                    <FaMapMarkerAlt />
+                </button>
+            </div>
+            
+            {isOpen && suggestions.length > 0 && (
+                <ul className={styles.suggestionsList}>
+                    {suggestions.map((sg, index) => (
+                        <li 
+                            key={index} 
+                            className={styles.suggestionItem}
+                            onClick={() => {
+                                setQuery(sg.name);
+                                setIsOpen(false);
+                                onSelectLocation({
+                                    name: sg.name,
+                                    address: sg.address,
+                                    lat: sg.lat,
+                                    lng: sg.lng
+                                });
+                            }}
+                        >
+                            <strong>{sg.name}</strong>
+                            <small>{sg.address}</small>
+                        </li>
+                    ))}
+                </ul>
+            )}
+            {loading && <div className={styles.loadingText}>Đang tìm kiếm...</div>}
+        </div>
+    );
+};
+
 // Component xử lý logic vẽ đường đi trên bản đồ bằng OSRM
 const RoutingMachine = ({ departureStation, destinationStation, initialWaypoints, onRouteFound, isAddStationMode }) => {
     const map = useMap();
@@ -172,15 +433,12 @@ const AddStationOverlay = ({ isAddStationMode, onMapClick, routeGeometryJSON }) 
             onMouseDown={(e) => {
                 // Chặn sự kiện truyền xuống leaflet-routing-machine
                 e.stopPropagation();
-                e.preventDefault();
             }}
             onMouseMove={(e) => {
                 e.stopPropagation();
-                e.preventDefault();
             }}
             onMouseUp={(e) => {
                 e.stopPropagation();
-                e.preventDefault();
             }}
             onClick={(e) => {
                 e.stopPropagation();
@@ -189,7 +447,7 @@ const AddStationOverlay = ({ isAddStationMode, onMapClick, routeGeometryJSON }) 
                 // Lấy tọa độ latlng từ con trỏ chuột
                 const latlng = map.mouseEventToLatLng(e.nativeEvent);
                 
-                let isOnRoute = false;
+                let isOnRoute = !routeGeometryJSON; // Nếu không có ràng buộc routeGeometry thì coi như luôn đúng (khi pick điểm)
                 if (routeGeometryJSON) {
                     try {
                         const coords = JSON.parse(routeGeometryJSON);
@@ -241,6 +499,7 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
     const [destinationStation, setDestinationStation] = useState(null);
     const [initialMapWaypoints, setInitialMapWaypoints] = useState(null);
     const [isAddStationMode, setIsAddStationMode] = useState(false);
+    const [pickingEndpoint, setPickingEndpoint] = useState(null); // 'departure' | 'destination' | null
     
     // For updating local station list with dynamically created stations
     const [localStationList, setLocalStationList] = useState([]);
@@ -276,8 +535,17 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
                 }
                 
                 // Find and set departure and destination stations to render the map route
-                const dep = localStationList.find(s => s.name === initialData.departureLocation);
-                const dest = localStationList.find(s => s.name === initialData.destinationLocation);
+                let dep = localStationList.find(s => s.name === initialData.departureLocation);
+                let dest = localStationList.find(s => s.name === initialData.destinationLocation);
+                
+                // Nếu không tìm thấy trong list (tức là custom location), lấy từ waypoints
+                if (!dep && parsedWp && parsedWp.length > 0) {
+                    dep = { name: initialData.departureLocation, lat: parsedWp[0].lat, lng: parsedWp[0].lng };
+                }
+                if (!dest && parsedWp && parsedWp.length > 1) {
+                    dest = { name: initialData.destinationLocation, lat: parsedWp[parsedWp.length-1].lat, lng: parsedWp[parsedWp.length-1].lng };
+                }
+                
                 setDepartureStation(dep || null);
                 setDestinationStation(dest || null);
 
@@ -306,26 +574,29 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
                 setInitialMapWaypoints(null);
             }
             setIsAddStationMode(false);
+            setPickingEndpoint(null);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, initialData]);
 
-    const handleDepartureChange = (e) => {
-        const value = e.target.value; // It is station name
-        const station = localStationList.find(s => s.name === value);
-        
-        setFormData(prev => ({ ...prev, departureLocation: value }));
-        setDepartureStation(station || null);
+    const handleDepartureSelect = (locationObj) => {
+        setFormData(prev => ({ ...prev, departureLocation: locationObj.name }));
+        setDepartureStation(locationObj);
         setInitialMapWaypoints(null); // Reset waypoints when changing endpoints
     };
 
-    const handleDestinationChange = (e) => {
-        const value = e.target.value;
-        const station = localStationList.find(s => s.name === value);
-        
-        setFormData(prev => ({ ...prev, destinationLocation: value }));
-        setDestinationStation(station || null);
+    const handleDestinationSelect = (locationObj) => {
+        setFormData(prev => ({ ...prev, destinationLocation: locationObj.name }));
+        setDestinationStation(locationObj);
         setInitialMapWaypoints(null); // Reset waypoints when changing endpoints
+    };
+
+    const handleDepartureTextChange = (text) => {
+        setFormData(prev => ({ ...prev, departureLocation: text }));
+    };
+
+    const handleDestinationTextChange = (text) => {
+        setFormData(prev => ({ ...prev, destinationLocation: text }));
     };
 
     const handleAddStation = () => {
@@ -353,9 +624,9 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
         }));
     }, []);
 
-    // Handle map click to create a new station via Reverse Geocoding
+    // Handle map click to create a new station via Reverse Geocoding or pick endpoint
     const handleMapClick = async (latlng) => {
-        if (!isAddStationMode) return;
+        if (!isAddStationMode && !pickingEndpoint) return;
 
         setLoading(true);
         try {
@@ -364,7 +635,27 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
             const data = await response.json();
             
             const address = data.display_name || 'Không xác định';
-            const shortName = address.split(',')[0] || 'Trạm Mới';
+            const shortName = address.split(',')[0] || 'Điểm Mới';
+            const locationName = `${shortName}`;
+
+            if (pickingEndpoint) {
+                const locationObj = {
+                    name: locationName,
+                    address: address,
+                    lat: latlng.lat,
+                    lng: latlng.lng
+                };
+                if (pickingEndpoint === 'departure_custom' || pickingEndpoint === 'departure_custom_map') {
+                    handleDepartureSelect(locationObj);
+                } else {
+                    handleDestinationSelect(locationObj);
+                }
+                setPickingEndpoint(null);
+                setLoading(false);
+                return;
+            }
+
+            // Nếu không phải pickingEndpoint thì là isAddStationMode
             const stationName = `Trạm dừng - ${shortName}`;
 
             // Create station via API
@@ -377,12 +668,26 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
 
             const newStation = createRes.data;
 
+            // Tính khoảng cách từ điểm xuất phát đến trạm mới tạo
+            let calculatedDistance = 0;
+            if (departureStation && departureStation.lat && departureStation.lng) {
+                try {
+                    const osrmRes = await fetch(`http://localhost:5000/route/v1/driving/${departureStation.lng},${departureStation.lat};${latlng.lng},${latlng.lat}?overview=false`);
+                    const osrmData = await osrmRes.json();
+                    if (osrmData && osrmData.routes && osrmData.routes.length > 0) {
+                        calculatedDistance = parseFloat((osrmData.routes[0].distance / 1000).toFixed(1));
+                    }
+                } catch(e) {
+                    console.error('Lỗi khi tính khoảng cách từ trạm gốc:', e);
+                }
+            }
+
             // Update local station list and add it to route's stations
             setLocalStationList(prev => [...prev, newStation]);
             
             setStations(prev => [...prev, {
                 stationId: newStation.id,
-                distanceFromStart: 0 // Default to 0, admin can adjust
+                distanceFromStart: calculatedDistance
             }]);
 
             // Turn off mode
@@ -430,9 +735,13 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
 
     if (!isOpen) return null;
 
+    // Determine if map should be visible
+    // Luôn hiển thị bản đồ theo yêu cầu của user
+    const isMapVisible = true;
+
     return (
         <div className={styles.overlay} onClick={onClose}>
-            <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={`${styles.modal} ${isMapVisible ? styles.modalWithMap : styles.modalNoMap}`} onClick={e => e.stopPropagation()}>
                 <div className={styles.header}>
                     <h2 className={styles.title}>
                         {initialData ? 'Chỉnh sửa Tuyến đường' : 'Thêm Tuyến đường mới'}
@@ -448,35 +757,39 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
                         <form className={styles.form} onSubmit={handleSubmit} id="route-form">
                             <div className={styles.body}>
                                 <div className={styles.formGrid}>
-                                    <div className={styles.formGroup}>
-                                        <label>Điểm đi <span className={styles.required}>*</span></label>
-                                        <select 
-                                            className={styles.formControl}
-                                            value={formData.departureLocation}
-                                            onChange={handleDepartureChange}
-                                            required
-                                        >
-                                            <option value="">-- Chọn Điểm đi --</option>
-                                            {localStationList.map(st => (
-                                                <option key={`dep-${st.id}`} value={st.name}>{st.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    <EndpointSelector
+                                        type="departure"
+                                        label="Điểm đi"
+                                        selectedLocation={departureStation}
+                                        onSelect={(loc) => {
+                                            handleDepartureSelect(loc);
+                                            setPickingEndpoint(null);
+                                        }}
+                                        onClear={() => {
+                                            setDepartureStation(null);
+                                            setFormData(prev => ({ ...prev, departureLocation: '' }));
+                                        }}
+                                        pickingEndpoint={pickingEndpoint}
+                                        setPickingEndpoint={setPickingEndpoint}
+                                        localStationList={localStationList}
+                                    />
 
-                                    <div className={styles.formGroup}>
-                                        <label>Điểm đến <span className={styles.required}>*</span></label>
-                                        <select 
-                                            className={styles.formControl}
-                                            value={formData.destinationLocation}
-                                            onChange={handleDestinationChange}
-                                            required
-                                        >
-                                            <option value="">-- Chọn Điểm đến --</option>
-                                            {localStationList.map(st => (
-                                                <option key={`dest-${st.id}`} value={st.name}>{st.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                    <EndpointSelector
+                                        type="destination"
+                                        label="Điểm đến"
+                                        selectedLocation={destinationStation}
+                                        onSelect={(loc) => {
+                                            handleDestinationSelect(loc);
+                                            setPickingEndpoint(null);
+                                        }}
+                                        onClear={() => {
+                                            setDestinationStation(null);
+                                            setFormData(prev => ({ ...prev, destinationLocation: '' }));
+                                        }}
+                                        pickingEndpoint={pickingEndpoint}
+                                        setPickingEndpoint={setPickingEndpoint}
+                                        localStationList={localStationList}
+                                    />
 
                                     <div className={styles.formGroup}>
                                         <label>Khoảng cách OSRM (km) <span className={styles.required}>*</span></label>
@@ -529,9 +842,12 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
                                     </div>
                                 </div>
 
-                                {isAddStationMode && (
+                                {(isAddStationMode || (pickingEndpoint && pickingEndpoint.includes('custom'))) && (
                                     <div style={{ padding: '10px', backgroundColor: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>
-                                        Chế độ Map: Vui lòng click vào đường đi hoặc bất kỳ đâu trên bản đồ bên cạnh để tạo trạm dừng mới (Dùng Reverse Geocoding).
+                                        {pickingEndpoint && pickingEndpoint.includes('custom')
+                                            ? 'Chế độ chọn điểm: Click vào bất kỳ đâu trên bản đồ để chọn tọa độ làm điểm đầu/cuối.'
+                                            : 'Chế độ Map: Vui lòng click trực tiếp lên đường đi màu xanh để tạo trạm dừng mới.'
+                                        }
                                     </div>
                                 )}
 
@@ -596,7 +912,7 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
                     </div>
                     
                     {/* Right Panel: Map */}
-                    <div className={styles.rightPanel}>
+                    <div className={`${styles.rightPanel} ${!isMapVisible ? styles.rightPanelHidden : ''}`}>
                         <MapContainer 
                             center={[16.047079, 108.206230]} // Default center Vietnam (Da Nang)
                             zoom={5} 
@@ -615,11 +931,37 @@ const RouteModal = ({ isOpen, onClose, onSubmit, initialData, stationList = [] }
                                 isAddStationMode={isAddStationMode}
                             />
 
+                            <MapResizeFix isVisible={isMapVisible} />
+
                             <AddStationOverlay 
-                                isAddStationMode={isAddStationMode}
+                                isAddStationMode={isAddStationMode || (!!pickingEndpoint && pickingEndpoint.includes('custom'))}
                                 onMapClick={handleMapClick}
-                                routeGeometryJSON={formData.routeGeometry}
+                                routeGeometryJSON={pickingEndpoint ? null : formData.routeGeometry}
                             />
+
+                            {/* Hiển thị Marker trạm có sẵn khi chọn Existing */}
+                            {pickingEndpoint && pickingEndpoint.includes('existing') && localStationList.map(st => (
+                                <Marker 
+                                    key={`all-st-${st.id}`} 
+                                    position={[st.lat, st.lng]}
+                                    eventHandlers={{
+                                        click: () => {
+                                            const loc = { name: st.name, lat: st.lat, lng: st.lng };
+                                            if (pickingEndpoint === 'departure_existing') {
+                                                handleDepartureSelect(loc);
+                                            } else {
+                                                handleDestinationSelect(loc);
+                                            }
+                                            setPickingEndpoint(null);
+                                        }
+                                    }}
+                                >
+                                    <Popup>
+                                        <strong>{st.name}</strong><br/>
+                                        <span style={{ fontSize: '12px' }}>Click để chọn trạm này</span>
+                                    </Popup>
+                                </Marker>
+                            ))}
 
                             {/* Show markers for stations added to the route */}
                             {stations.map((s, idx) => {
