@@ -51,7 +51,16 @@ const BusModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await onSubmit(formData);
+            const payload = {
+                licensePlate: formData.licensePlate.trim(),
+                type: formData.type,
+                totalSeats: Number(formData.totalSeats),
+                model: formData.model.trim(),
+            };
+            if (isEditMode) {
+                payload.status = formData.status;
+            }
+            await onSubmit(payload);
             onClose();
         } catch (error) {
             // Error is handled in the parent component
