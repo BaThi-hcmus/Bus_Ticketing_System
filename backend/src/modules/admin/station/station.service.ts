@@ -9,6 +9,7 @@ import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
 import { Haversine } from 'src/utils/haversine.util';
+import { GeocodingUtil } from 'src/utils/geocoding.util';
 
 @Injectable()
 export class StationService implements OnModuleInit {
@@ -18,7 +19,8 @@ export class StationService implements OnModuleInit {
         private readonly search: Search,
         private readonly pagination: Pagination,
         private readonly sort: Sort,
-        private readonly haversine: Haversine
+        private readonly haversine: Haversine,
+        private readonly geocoding: GeocodingUtil,
     ) { }
 
     async onModuleInit() {
@@ -219,5 +221,9 @@ export class StationService implements OnModuleInit {
         }
 
         return station;
+    }
+
+    async autocompleteLocation(query: string) {
+        return this.geocoding.searchLocations(query);
     }
 }

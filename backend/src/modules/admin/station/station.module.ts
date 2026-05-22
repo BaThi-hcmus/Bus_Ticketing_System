@@ -8,6 +8,7 @@ import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
 import { Haversine } from 'src/utils/haversine.util';
+import { GeocodingUtil } from 'src/utils/geocoding.util';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Station])],
@@ -18,7 +19,8 @@ import { Haversine } from 'src/utils/haversine.util';
         Search,
         Pagination,
         Sort,
-        Haversine
+        Haversine,
+        GeocodingUtil,
     ],
 })
 export class StationModule { }

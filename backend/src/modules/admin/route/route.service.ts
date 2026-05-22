@@ -9,6 +9,7 @@ import { FilterStatus } from '../../../utils/filterStatus.util';
 import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
+import { GeocodingUtil } from 'src/utils/geocoding.util';
 
 @Injectable()
 export class RouteService {
@@ -18,7 +19,8 @@ export class RouteService {
         private readonly filterStatus: FilterStatus,
         private readonly search: Search,
         private readonly pagination: Pagination,
-        private readonly sort: Sort
+        private readonly sort: Sort,
+        private readonly geocoding: GeocodingUtil,
     ) { }
 
     async getRoutes(status: string, keyword: string, page: number, sortType: string): Promise<any> {
@@ -220,28 +222,7 @@ export class RouteService {
         return route;
     }
 
-    async autocompleteLocation(query: string): Promise<any[]> {
-        if (!query || query.trim().length === 0) return [];
-        try {
-            // Sử dụng Nominatim của OpenStreetMap để lấy gợi ý địa điểm (giới hạn ở Việt Nam)
-            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5&countrycodes=vn`;
-            const response = await fetch(url, {
-                headers: {
-                    'Accept-Language': 'vi-VN,vi;q=0.9',
-                    'User-Agent': 'BusTicketingSystem/1.0'
-                }
-            });
-            const data = await response.json();
-            
-            return data.map((item: any) => ({
-                name: item.name || item.display_name.split(',')[0],
-                address: item.display_name,
-                lat: parseFloat(item.lat),
-                lng: parseFloat(item.lon)
-            }));
-        } catch (error) {
-            console.error('Lỗi khi gọi API Autocomplete:', error);
-            return [];
-        }
+    async autocompleteLocation(query: string) {
+        return this.geocoding.searchLocations(query);
     }
 }

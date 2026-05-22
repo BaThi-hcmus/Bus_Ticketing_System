@@ -7,6 +7,7 @@ import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import 'leaflet-routing-machine';
 import styles from './RouteModal.module.css';
 import api from '../../services/api';
+import LocationSearchInput from '../Common/LocationSearchInput';
 
 // Fix leaflet default icons issue in React
 delete L.Icon.Default.prototype._getIconUrl;
@@ -153,11 +154,11 @@ const EndpointSelector = ({
                     </button>
                     <LocationSearchInput
                         placeholder="Nhập tên bến xe, địa danh..."
-                        value=""
-                        onChange={() => {}}
+                        initialValue=""
                         onSelectLocation={onSelect}
                         isActiveMapPick={pickingEndpoint === `${type}_custom_map`}
                         onPickOnMap={() => setPickingEndpoint(pickingEndpoint === `${type}_custom_map` ? `${type}_custom` : `${type}_custom_map`)}
+                        autocompletePath="/admin/route/location/autocomplete"
                     />
                 </div>
             </div>
@@ -172,107 +173,6 @@ const EndpointSelector = ({
                 <FaPlus style={{ color: '#94a3b8', fontSize: '1.2rem' }} />
                 <span className={styles.endpointCardText}>Chọn {label.toLowerCase()}</span>
             </div>
-        </div>
-    );
-};
-
-// Component xử lý tìm kiếm và gợi ý địa điểm
-const LocationSearchInput = ({ value, onChange, onSelectLocation, onPickOnMap, placeholder, isActiveMapPick }) => {
-    const [query, setQuery] = useState(value);
-    const [suggestions, setSuggestions] = useState([]);
-    const [isOpen, setIsOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const wrapperRef = useRef(null);
-
-    useEffect(() => {
-        setQuery(value);
-    }, [value]);
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    useEffect(() => {
-        const fetchSuggestions = async () => {
-            if (!query || query.trim().length < 2) {
-                setSuggestions([]);
-                return;
-            }
-            // Không gọi API nếu query giống hệt value đã chọn
-            if (query === value) return;
-
-            setLoading(true);
-            try {
-                const res = await api.get(`/admin/route/location/autocomplete?q=${encodeURIComponent(query)}`);
-                if (res.data && res.data.data) {
-                    setSuggestions(res.data.data || []);
-                    setIsOpen(true);
-                }
-            } catch (error) {
-                console.error("Autocomplete error:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        const timerId = setTimeout(fetchSuggestions, 500); // 500ms debounce
-        return () => clearTimeout(timerId);
-    }, [query, value]);
-
-    return (
-        <div className={styles.locationSearchWrapper} ref={wrapperRef}>
-            <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                    type="text"
-                    className={styles.formControl}
-                    placeholder={placeholder}
-                    value={query}
-                    onChange={(e) => {
-                        setQuery(e.target.value);
-                        onChange(e.target.value);
-                    }}
-                    onFocus={() => { if (suggestions.length > 0) setIsOpen(true); }}
-                />
-                <button 
-                    type="button" 
-                    className={`${styles.mapPickBtn} ${isActiveMapPick ? styles.mapPickBtnActive : ''}`}
-                    onClick={onPickOnMap}
-                    title="Chọn trên bản đồ"
-                >
-                    <FaMapMarkerAlt />
-                </button>
-            </div>
-            
-            {isOpen && suggestions.length > 0 && (
-                <ul className={styles.suggestionsList}>
-                    {suggestions.map((sg, index) => (
-                        <li 
-                            key={index} 
-                            className={styles.suggestionItem}
-                            onClick={() => {
-                                setQuery(sg.name);
-                                setIsOpen(false);
-                                onSelectLocation({
-                                    name: sg.name,
-                                    address: sg.address,
-                                    lat: sg.lat,
-                                    lng: sg.lng
-                                });
-                            }}
-                        >
-                            <strong>{sg.name}</strong>
-                            <small>{sg.address}</small>
-                        </li>
-                    ))}
-                </ul>
-            )}
-            {loading && <div className={styles.loadingText}>Đang tìm kiếm...</div>}
         </div>
     );
 };

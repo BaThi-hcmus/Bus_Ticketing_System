@@ -11,8 +11,13 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
-    return Promise.reject(error.response?.data || error.message);
+    const data = error.response?.data;
+    console.error('API Error:', data || error.message);
+    if (data?.message) {
+      const msg = Array.isArray(data.message) ? data.message.join(', ') : data.message;
+      return Promise.reject({ ...data, message: msg });
+    }
+    return Promise.reject(data || error.message);
   }
 );
 

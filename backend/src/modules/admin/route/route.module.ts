@@ -8,6 +8,7 @@ import { FilterStatus } from 'src/utils/filterStatus.util';
 import { Search } from 'src/utils/search.util';
 import { Pagination } from 'src/utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
+import { GeocodingUtil } from 'src/utils/geocoding.util';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Route, RouteStation])],
@@ -17,7 +18,8 @@ import { Sort } from 'src/utils/sort.ulti';
     FilterStatus,
     Search,
     Pagination,
-    Sort
+    Sort,
+    GeocodingUtil,
   ]
 })
 export class RouteModule {}

@@ -6,6 +6,7 @@ import {
     Query,
     Param,
     Get,
+    Header,
 } from '@nestjs/common';
 import { StationService } from './station.service';
 import { CreateStationDto } from './dto/create.station.dto';
@@ -26,6 +27,17 @@ export class StationController {
 
         return {
             message: 'Lấy danh sách trạm dừng thành công',
+            data: result,
+        };
+    }
+
+    @Get('location/autocomplete')
+    @Header('Cache-Control', 'no-store, no-cache, must-revalidate')
+    async autocompleteLocation(@Query('q') query: string) {
+        const result = await this.stationService.autocompleteLocation(query);
+
+        return {
+            message: 'Lấy gợi ý địa điểm thành công',
             data: result,
         };
     }

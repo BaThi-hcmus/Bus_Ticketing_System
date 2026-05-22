@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Query, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Query, Param, Header } from '@nestjs/common';
 import { RouteService } from './route.service';
 import { CreateRouteDto } from './dto/create.route.dto';
 import { EditRouteDto } from './dto/edit.route.dto';
@@ -23,6 +23,7 @@ export class RouteController {
   }
 
   @Get('location/autocomplete')
+  @Header('Cache-Control', 'no-store, no-cache, must-revalidate')
   async autocompleteLocation(@Query('q') query: string) {
     const result = await this.routeService.autocompleteLocation(query);
 

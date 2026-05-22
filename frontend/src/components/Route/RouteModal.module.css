@@ -769,6 +769,8 @@
 .selectorPopover {
     position: relative;
     width: 100%;
+    overflow: visible;
+    z-index: 5;
 }
 
 .optionsMenu {
