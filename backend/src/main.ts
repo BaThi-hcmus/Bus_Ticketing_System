@@ -1,9 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
+  // Bật tính năng validate tự động trên toàn hệ thống
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true, // Tự động xóa các thuộc tính lạ không có trong DTO
+    forbidNonWhitelisted: true, // Báo lỗi nếu Frontend cố tình truyền thuộc tính lạ lên
+    transform: true, // Tự động ép kiểu dữ liệu từ chuỗi sang số nếu DTO khai báo là số
+  }));
   // Bật CORS để cho phép Frontend gọi API
   app.enableCors();
 

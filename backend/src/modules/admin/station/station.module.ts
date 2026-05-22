@@ -3,10 +3,22 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { StationController } from './station.controller';
 import { StationService } from './station.service';
 import { Station } from 'src/database/entities/station.entity';
+import { FilterStatus } from '../../../utils/filterStatus.util';
+import { Search } from '../../../utils/search.util';
+import { Pagination } from '../../../utils/pagination.util';
+import { Sort } from 'src/utils/sort.ulti';
+import { Haversine } from 'src/utils/haversine.util';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Station])],
-  controllers: [StationController],
-  providers: [StationService]
+    imports: [TypeOrmModule.forFeature([Station])],
+    controllers: [StationController],
+    providers: [
+        StationService,
+        FilterStatus,
+        Search,
+        Pagination,
+        Sort,
+        Haversine
+    ],
 })
-export class StationModule {}
+export class StationModule { }

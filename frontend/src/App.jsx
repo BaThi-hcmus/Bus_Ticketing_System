@@ -4,6 +4,7 @@ import AdminLayout from './components/AdminLayout/AdminLayout';
 import BusManagement from './pages/BusManagement/BusManagement';
 
 import RouteManagement from './pages/RouteManagement/RouteManagement';
+import StationManagement from './pages/StationManagement/StationManagement';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <Route path="/admin" element={<AdminLayout />}>
         <Route path="buses" element={<BusManagement />} />
         <Route path="routes" element={<RouteManagement />} />
+        <Route path="stations" element={<StationManagement />} />
       </Route>
     </Routes>
   );

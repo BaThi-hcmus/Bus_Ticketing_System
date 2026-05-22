@@ -21,6 +21,9 @@ export class Station {
     @Column({ default: false })
     deleted: boolean;
 
+    @Column({ default: 'active' })
+    status: string;
+
     // Tọa độ Vĩ độ (Latitude)
     @Column({ type: 'float', nullable: true })
     lat: number;
