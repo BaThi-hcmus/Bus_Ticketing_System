@@ -6,6 +6,7 @@ import {
     OneToMany
 } from 'typeorm';
 import { Booking } from './booking.entity';
+import { UserRole } from './userRole.entity';
 
 @Entity('Users')
 export class User {
@@ -24,15 +25,21 @@ export class User {
     @Column({ type: 'varchar', length: 15, unique: true, nullable: true })
     phoneNumber: string;
 
-    @Column({ type: 'nvarchar', length: 20, default: 'client' })
-    role: string; // 'admin' | 'staff' | 'client'
+    @Column({type: 'nvarchar'})
+    avatar: string;
 
-    @Column({ default: true })
-    isActive: boolean;
+    @Column({ default: 'active' })
+    status: string;
 
     @CreateDateColumn()
     createdAt: Date;
 
+    @CreateDateColumn() 
+    updatedAt: Date;
+
     @OneToMany(() => Booking, (booking) => booking.user)
     bookings: Booking[];
+
+    @OneToMany(() => UserRole, (userRole) => userRole.user)
+    userRoles: UserRole[];
 }
