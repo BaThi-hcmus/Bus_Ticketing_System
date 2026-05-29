@@ -31,6 +31,9 @@ export class User {
     @Column({ default: 'active' })
     status: string;
 
+    @Column({default: false})
+    deleted: boolean;
+
     @CreateDateColumn()
     createdAt: Date;
 

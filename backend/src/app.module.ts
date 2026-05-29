@@ -6,6 +6,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BusModule } from './modules/admin/bus/bus.module';
 import { RouteModule } from './modules/admin/route/route.module';
 import { StationModule } from './modules/admin/station/station.module';
+//import { AuthModule } from './modules/admin/auth/auth.module';
+import { UserModule } from './modules/admin/user/user.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-yet';
 
 @Module({
   imports: [
@@ -31,9 +35,23 @@ import { StationModule } from './modules/admin/station/station.module';
         },
       }),
     }),
+    // cache - redis
+    CacheModule.registerAsync({
+      isGlobal: true, // Để các module khác (Auth, User...) đều dùng được mà không cần import lại
+      useFactory: async () => ({
+        store: await redisStore({
+          socket: {
+            host: 'localhost',
+            port: 6379,
+          },
+        }),
+      }),
+    }),
     BusModule,
     RouteModule,
     StationModule,
+    //AuthModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
