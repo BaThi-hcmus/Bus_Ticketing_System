@@ -22,6 +22,15 @@ export class RoleController {
     }
   }
 
+  @Get('all')
+  async getAllRoles() {
+    const result = await this.roleService.getAllRoles();
+    return {
+      message: 'Lấy tất cả roles thành công',
+      data: result
+    }
+  }
+
   @Post('create')
   async createRole(@Body() createRoleDto: CreateRoleDto) {
     const result = await this.roleService.createRole(createRoleDto);

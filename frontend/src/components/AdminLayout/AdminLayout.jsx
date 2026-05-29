@@ -42,10 +42,12 @@ const AdminLayout = () => {
                     >
                         <FaUserShield /> Quản lý Vai trò
                     </NavLink>
-                    <div className={styles.navItem} style={{opacity: 0.5, cursor: 'not-allowed'}}>
-                        <FaUsers /> Quản lý Khách hàng
-                    </div>
-
+                    <NavLink 
+                        to="/admin/users" 
+                        className={({isActive}) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
+                    >
+                        <FaUsers /> Quản lý Người dùng
+                    </NavLink>
                     <div className={styles.navItem} style={{opacity: 0.5, cursor: 'not-allowed'}}>
                         <FaTicketAlt /> Quản lý Vé
                     </div>

@@ -5,7 +5,7 @@ export class Sort {
     sort = (sortType: string, sortList: any[]) => {
         // Mặc định sắp xếp theo thời gian tạo mới nhất nếu không truyền sortType
         if (!sortType) {
-            return { createdAt: "DESC" };
+            return { createdAt: "DESC", id: "DESC" };
         }
 
         // Lấy ra các field hợp lệ từ item.type 
@@ -32,6 +32,10 @@ export class Sort {
 
         const sortObject: any = {};
         sortObject[field] = direction;
+        // Thêm id làm tiebreaker để đảm bảo thứ tự ổn định cho phân trang
+        if (field !== 'id') {
+            sortObject['id'] = direction;
+        }
 
         return sortObject;
     }

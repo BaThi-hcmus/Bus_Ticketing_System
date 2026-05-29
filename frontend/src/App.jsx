@@ -6,6 +6,7 @@ import RouteManagement from './pages/RouteManagement/RouteManagement';
 import StationManagement from './pages/StationManagement/StationManagement';
 import PermissionManagement from './pages/PermissionManagement/PermissionManagement';
 import RoleManagement from './pages/RoleManagement/RoleManagement';
+import UserManagement from './pages/UserManagement/UserManagement';
 
 function App() {
   return (
@@ -19,10 +20,12 @@ function App() {
         <Route path="stations" element={<StationManagement />} />
         <Route path="permissions" element={<PermissionManagement />} />
         <Route path="roles" element={<RoleManagement />} />
+        <Route path="users" element={<UserManagement />} />
       </Route>
     </Routes>
   );
 }
 
 export default App;
+
 

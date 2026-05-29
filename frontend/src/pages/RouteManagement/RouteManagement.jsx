@@ -69,20 +69,20 @@ const RouteManagement = () => {
         fetchStations();
     }, [fetchRoutes]);
 
-    const handleSearch = (newKeyword) => {
+    const handleSearch = useCallback((newKeyword) => {
         setKeyword(newKeyword);
         setPage(1); // Reset page on new search
-    };
+    }, []);
 
-    const handleStatusChange = (newStatus) => {
+    const handleStatusChange = useCallback((newStatus) => {
         setStatus(newStatus);
         setPage(1);
-    };
+    }, []);
 
-    const handleSortChange = (newSortType) => {
+    const handleSortChange = useCallback((newSortType) => {
         setSortType(newSortType);
         setPage(1);
-    };
+    }, []);
 
     const handlePageChange = (newPage) => {
         setPage(newPage);

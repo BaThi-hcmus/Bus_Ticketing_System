@@ -94,6 +94,13 @@ export class RoleService {
         };
     }
 
+    async getAllRoles(): Promise<Role[]> {
+        return await this.roleRepo.find({
+            where: { deleted: false, status: 'active' },
+            order: { name: 'ASC' }
+        });
+    }
+
     async createRole(createRoleDto: CreateRoleDto): Promise<void> {
         // Kiểm tra tên role có tồn tại trong hệ thống chưa
         const isRoleExist = await this.roleRepo.findOne({

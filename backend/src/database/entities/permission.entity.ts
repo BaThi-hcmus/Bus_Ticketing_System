@@ -23,7 +23,7 @@ export class Permission {
     @Column({ default: 'active' })
     status: string;
 
-    @CreateDateColumn({ type: 'date' })
+    @CreateDateColumn({ type: 'datetime' })
     createdAt: Date;
 
     @OneToMany(() => RolePermission, (rolePermission) => rolePermission.permission)

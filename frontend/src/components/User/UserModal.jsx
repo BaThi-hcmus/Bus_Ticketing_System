@@ -1,33 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import api from '../../services/api';
-import styles from './RoleModal.module.css';
+import styles from './UserModal.module.css';
 
-const RoleModal = ({ isOpen, onClose, onSubmit, initialData }) => {
+const UserModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     const isEditMode = !!initialData;
     
     const [formData, setFormData] = useState({
-        name: '',
+        fullName: '',
+        email: '',
+        password: '',
         status: 'active',
-        permissions: []
+        roles: []
     });
     
-    const [allPermissions, setAllPermissions] = useState([]);
+    const [allRoles, setAllRoles] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // Lấy danh sách tất cả permissions từ backend
     useEffect(() => {
         if (isOpen) {
-            const fetchPermissions = async () => {
+            const fetchRoles = async () => {
                 try {
-                    const response = await api.get('/admin/permission/all');
-                    // Lấy tất cả permissions (không phân trang)
-                    setAllPermissions(response.data || []);
+                    const response = await api.get('/admin/role/all');
+                    setAllRoles(response.data || []);
                 } catch (err) {
-                    console.error('Lỗi khi tải danh sách quyền:', err);
+                    console.error('Lỗi khi tải danh sách vai trò:', err);
                 }
             };
-            fetchPermissions();
+            fetchRoles();
         }
     }, [isOpen]);
 
@@ -35,17 +35,21 @@ const RoleModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         if (isOpen) {
             if (initialData) {
                 setFormData({
-                    name: initialData.name || '',
+                    fullName: initialData.fullName || '',
+                    email: initialData.email || '',
+                    password: '', // Không hiển thị password cũ
                     status: initialData.status || 'active',
-                    permissions: initialData.permissions 
-                        ? initialData.permissions.map(p => p.id) 
+                    roles: initialData.roles 
+                        ? initialData.roles.map(r => r.id) 
                         : []
                 });
             } else {
                 setFormData({
-                    name: '',
+                    fullName: '',
+                    email: '',
+                    password: '',
                     status: 'active',
-                    permissions: []
+                    roles: []
                 });
             }
         }
@@ -61,28 +65,41 @@ const RoleModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         }));
     };
 
-    const handlePermissionToggle = (permId) => {
+    const handleRoleToggle = (roleId) => {
         setFormData(prev => {
-            const current = prev.permissions;
-            if (current.includes(permId)) {
-                return { ...prev, permissions: current.filter(id => id !== permId) };
+            const current = prev.roles;
+            if (current.includes(roleId)) {
+                return { ...prev, roles: current.filter(id => id !== roleId) };
             } else {
-                return { ...prev, permissions: [...current, permId] };
+                return { ...prev, roles: [...current, roleId] };
             }
         });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!isEditMode && !formData.password) {
+            alert('Vui lòng nhập mật khẩu cho người dùng mới');
+            return;
+        }
+
         setLoading(true);
         try {
             const payload = {
-                name: formData.name.trim(),
-                permissions: formData.permissions,
+                fullName: formData.fullName.trim(),
+                email: formData.email.trim(),
+                roles: formData.roles,
             };
+
+            if (formData.password) {
+                payload.password = formData.password;
+            }
+
             if (isEditMode) {
                 payload.status = formData.status;
             }
+            
             await onSubmit(payload);
             onClose();
         } catch (error) {
@@ -96,7 +113,7 @@ const RoleModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         <div className={styles.overlay}>
             <div className={styles.modal}>
                 <div className={styles.header}>
-                    <h2 className={styles.title}>{isEditMode ? 'Chỉnh sửa vai trò' : 'Thêm vai trò mới'}</h2>
+                    <h2 className={styles.title}>{isEditMode ? 'Chỉnh sửa người dùng' : 'Thêm người dùng mới'}</h2>
                     <button type="button" className={styles.closeBtn} onClick={onClose}>
                         <FaTimes />
                     </button>
@@ -105,15 +122,41 @@ const RoleModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 <form onSubmit={handleSubmit}>
                     <div className={styles.body}>
                         <div className={styles.formGroup}>
-                            <label>Tên vai trò</label>
+                            <label>Họ và tên</label>
                             <input 
                                 type="text" 
-                                name="name"
+                                name="fullName"
                                 className={styles.formControl}
-                                value={formData.name}
+                                value={formData.fullName}
                                 onChange={handleChange}
-                                placeholder="VD: ADMIN, STAFF, DRIVER..."
+                                placeholder="Nhập họ và tên..."
                                 required
+                            />
+                        </div>
+
+                        <div className={styles.formGroup}>
+                            <label>Email</label>
+                            <input 
+                                type="email" 
+                                name="email"
+                                className={styles.formControl}
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="Nhập địa chỉ email..."
+                                required
+                            />
+                        </div>
+
+                        <div className={styles.formGroup}>
+                            <label>Mật khẩu {isEditMode && <span className={styles.hint}>(Để trống nếu không muốn đổi)</span>}</label>
+                            <input 
+                                type="password" 
+                                name="password"
+                                className={styles.formControl}
+                                value={formData.password}
+                                onChange={handleChange}
+                                placeholder="Nhập mật khẩu..."
+                                required={!isEditMode}
                             />
                         </div>
 
@@ -133,19 +176,19 @@ const RoleModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                         )}
 
                         <div className={styles.formGroup}>
-                            <label>Gán quyền cho vai trò</label>
-                            <div className={styles.permissionList}>
-                                {allPermissions.length === 0 ? (
-                                    <div className={styles.noPerms}>Chưa có quyền nào trong hệ thống.</div>
+                            <label>Gán vai trò</label>
+                            <div className={styles.roleList}>
+                                {allRoles.length === 0 ? (
+                                    <div className={styles.noRoles}>Chưa có vai trò nào trong hệ thống.</div>
                                 ) : (
-                                    allPermissions.map(perm => (
-                                        <label key={perm.id} className={styles.permissionItem}>
+                                    allRoles.map(role => (
+                                        <label key={role.id} className={styles.roleItem}>
                                             <input
                                                 type="checkbox"
-                                                checked={formData.permissions.includes(perm.id)}
-                                                onChange={() => handlePermissionToggle(perm.id)}
+                                                checked={formData.roles.includes(role.id)}
+                                                onChange={() => handleRoleToggle(role.id)}
                                             />
-                                            <span className={styles.permName}>{perm.name}</span>
+                                            <span className={styles.roleName}>{role.name}</span>
                                         </label>
                                     ))
                                 )}
@@ -167,4 +210,4 @@ const RoleModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     );
 };
 
-export default RoleModal;
+export default UserModal;

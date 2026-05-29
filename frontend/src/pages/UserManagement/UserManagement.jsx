@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
-import RoleFilter from '../../components/Role/RoleFilter';
-import RoleTable from '../../components/Role/RoleTable';
-import RoleModal from '../../components/Role/RoleModal';
-import RoleDetailModal from '../../components/Role/RoleDetailModal';
+import UserFilter from '../../components/User/UserFilter';
+import UserTable from '../../components/User/UserTable';
+import UserModal from '../../components/User/UserModal';
+import UserDetailModal from '../../components/User/UserDetailModal';
 import Pagination from '../../components/Common/Pagination';
-import styles from './RoleManagement.module.css';
+import styles from './UserManagement.module.css';
 
-const RoleManagement = () => {
+const UserManagement = () => {
     // Data states
-    const [roles, setRoles] = useState([]);
+    const [users, setUsers] = useState([]);
     const [filterStatusOptions, setFilterStatusOptions] = useState([]);
     const [sortList, setSortList] = useState([]);
     const [paginationObj, setPaginationObj] = useState(null);
@@ -18,9 +18,9 @@ const RoleManagement = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingRole, setEditingRole] = useState(null);
+    const [editingUser, setEditingUser] = useState(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-    const [selectedRoleDetail, setSelectedRoleDetail] = useState(null);
+    const [selectedUserDetail, setSelectedUserDetail] = useState(null);
 
     // Query states
     const [status, setStatus] = useState('');
@@ -28,11 +28,11 @@ const RoleManagement = () => {
     const [page, setPage] = useState(1);
     const [sortType, setSortType] = useState('');
 
-    const fetchRoles = useCallback(async () => {
+    const fetchUsers = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await api.get('/admin/role', {
+            const response = await api.get('/admin/user', {
                 params: {
                     status: status || undefined,
                     keyword: keyword || undefined,
@@ -42,21 +42,21 @@ const RoleManagement = () => {
             });
 
             const data = response.data;
-            setRoles(data.data || []);
+            setUsers(data.data || []);
             setFilterStatusOptions(data.filterStatusObject || []);
             setPaginationObj(data.paginationObject);
             if (data.sortList) setSortList(data.sortList);
 
         } catch (err) {
-            setError(err.message || 'Lỗi khi tải danh sách vai trò');
+            setError(err.message || 'Lỗi khi tải danh sách người dùng');
         } finally {
             setLoading(false);
         }
     }, [status, keyword, page, sortType]);
 
     useEffect(() => {
-        fetchRoles();
-    }, [fetchRoles]);
+        fetchUsers();
+    }, [fetchUsers]);
 
     const handleSearch = useCallback((newKeyword) => {
         setKeyword(newKeyword);
@@ -78,31 +78,31 @@ const RoleManagement = () => {
     };
 
     const handleAddClick = () => {
-        setEditingRole(null);
+        setEditingUser(null);
         setIsModalOpen(true);
     };
 
-    const handleEditClick = (role) => {
-        setEditingRole(role);
+    const handleEditClick = (user) => {
+        setEditingUser(user);
         setIsModalOpen(true);
     };
 
     const handleDeleteClick = async (id) => {
-        if (window.confirm('Bạn có chắc chắn muốn xóa vai trò này không?')) {
+        if (window.confirm('Bạn có chắc chắn muốn xóa người dùng này không?')) {
             try {
-                await api.patch(`/admin/role/edit/${id}`, { deleted: true });
-                fetchRoles();
+                await api.patch(`/admin/user/edit/${id}`, { deleted: true });
+                fetchUsers();
             } catch (err) {
-                alert(err.message || 'Lỗi khi xóa vai trò');
+                alert(err.message || 'Lỗi khi xóa người dùng');
             }
         }
     };
 
-    const handleToggleStatus = async (role) => {
-        const newStatus = role.status === 'active' ? 'inactive' : 'active';
+    const handleToggleStatus = async (user) => {
+        const newStatus = user.status === 'active' ? 'inactive' : 'active';
         try {
-            await api.patch(`/admin/role/edit/${role.id}`, { status: newStatus });
-            fetchRoles();
+            await api.patch(`/admin/user/edit/${user.id}`, { status: newStatus });
+            fetchUsers();
         } catch (err) {
             alert(err.message || 'Lỗi khi đổi trạng thái');
         }
@@ -110,24 +110,24 @@ const RoleManagement = () => {
 
     const handleViewClick = async (id) => {
         try {
-            const response = await api.get(`/admin/role/detail/${id}`);
-            setSelectedRoleDetail(response.data);
+            const response = await api.get(`/admin/user/detail/${id}`);
+            setSelectedUserDetail(response.data);
             setIsDetailModalOpen(true);
         } catch (err) {
-            alert(err.message || 'Lỗi khi lấy chi tiết vai trò');
+            alert(err.message || 'Lỗi khi lấy chi tiết người dùng');
         }
     };
 
     const handleModalSubmit = async (formData) => {
         try {
-            if (editingRole) {
-                await api.patch(`/admin/role/edit/${editingRole.id}`, formData);
+            if (editingUser) {
+                await api.patch(`/admin/user/edit/${editingUser.id}`, formData);
             } else {
-                await api.post('/admin/role/create', formData);
+                await api.post('/admin/user/create', formData);
             }
-            fetchRoles();
+            fetchUsers();
         } catch (err) {
-            alert(err.message || 'Có lỗi xảy ra khi lưu dữ liệu');
+            alert(err.response?.data?.message || err.message || 'Có lỗi xảy ra khi lưu dữ liệu');
             throw err;
         }
     };
@@ -135,13 +135,13 @@ const RoleManagement = () => {
     return (
         <div>
             <div className={styles.pageHeader}>
-                <h1 className={styles.pageTitle}>Quản lý Vai trò (Roles)</h1>
-                <p className={styles.pageDescription}>Thêm, sửa, xóa và phân quyền cho các vai trò trong hệ thống.</p>
+                <h1 className={styles.pageTitle}>Quản lý Người dùng (Users)</h1>
+                <p className={styles.pageDescription}>Quản trị viên có thể quản lý người dùng và phân quyền hệ thống.</p>
             </div>
 
             {error && <div className={styles.errorAlert}>{error}</div>}
 
-            <RoleFilter
+            <UserFilter
                 onSearch={handleSearch}
                 onStatusChange={handleStatusChange}
                 onSortChange={handleSortChange}
@@ -154,8 +154,8 @@ const RoleManagement = () => {
                 <div className={styles.loadingWrapper}>Đang tải dữ liệu...</div>
             ) : (
                 <>
-                    <RoleTable
-                        roles={roles}
+                    <UserTable
+                        users={users}
                         startIndex={paginationObj ? paginationObj.startIndex : 0}
                         onEdit={handleEditClick}
                         onDelete={handleDeleteClick}
@@ -170,20 +170,20 @@ const RoleManagement = () => {
                 </>
             )}
 
-            <RoleModal
+            <UserModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleModalSubmit}
-                initialData={editingRole}
+                initialData={editingUser}
             />
 
-            <RoleDetailModal
+            <UserDetailModal
                 isOpen={isDetailModalOpen}
                 onClose={() => setIsDetailModalOpen(false)}
-                role={selectedRoleDetail}
+                user={selectedUserDetail}
             />
         </div>
     );
 };
 
-export default RoleManagement;
+export default UserManagement;

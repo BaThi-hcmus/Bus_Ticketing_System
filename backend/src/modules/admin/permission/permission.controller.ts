@@ -22,6 +22,15 @@ export class PermissionController {
     }
   }
 
+  @Get('all')
+  async getAllPermissions() {
+    const result = await this.permissionService.getAllPermissions();
+    return {
+      message: 'Lấy tất cả permissions thành công',
+      data: result
+    }
+  }
+
   @Post('create')
   async createPermission(@Body() createPermissionDto: CreatePermissionDto) {
     const result = await this.permissionService.createPermission(createPermissionDto);

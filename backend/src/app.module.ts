@@ -53,7 +53,7 @@ import { PermissionModule } from './modules/admin/permission/permission.module';
     RouteModule,
     StationModule,
     //AuthModule,
-    // UserModule,
+    UserModule,
     RoleModule,
     PermissionModule,
   ],

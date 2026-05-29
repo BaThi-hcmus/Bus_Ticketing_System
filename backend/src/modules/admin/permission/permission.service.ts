@@ -75,6 +75,13 @@ export class PermissionService {
         };
     }
 
+    async getAllPermissions(): Promise<Permission[]> {
+        return await this.permisisonRepo.find({
+            where: { deleted: false, status: 'active' },
+            order: { name: 'ASC' }
+        });
+    }
+
     async createPermission(createPermissionDto: CreatePermissionDto): Promise<void> {
         // kiểm tra tên quyền có tồn tại chưa
         const isPermissionExist = await this.permisisonRepo.findOne({

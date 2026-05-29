@@ -1,0 +1,33 @@
+.pageHeader {
+    margin-bottom: 24px;
+}
+
+.pageTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.pageDescription {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.loadingWrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 60px;
+    font-size: 1rem;
+    color: var(--primary-color);
+}
+
+.errorAlert {
+    padding: 16px;
+    background-color: var(--danger-bg);
+    color: var(--danger-color);
+    border-radius: var(--radius-sm);
+    margin-bottom: 24px;
+    font-weight: 500;
+}
