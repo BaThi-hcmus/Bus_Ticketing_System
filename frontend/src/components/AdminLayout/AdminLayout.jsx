@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { FaBus, FaRoute, FaMapMarkerAlt, FaUsers, FaTicketAlt, FaShieldAlt } from 'react-icons/fa';
+import { FaBus, FaRoute, FaMapMarkerAlt, FaUsers, FaTicketAlt, FaShieldAlt, FaUserShield } from 'react-icons/fa';
 import styles from './AdminLayout.module.css';
 
 const AdminLayout = () => {
@@ -35,6 +35,12 @@ const AdminLayout = () => {
                         className={({isActive}) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
                     >
                         <FaShieldAlt /> Quản lý Quyền
+                    </NavLink>
+                    <NavLink 
+                        to="/admin/roles" 
+                        className={({isActive}) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
+                    >
+                        <FaUserShield /> Quản lý Vai trò
                     </NavLink>
                     <div className={styles.navItem} style={{opacity: 0.5, cursor: 'not-allowed'}}>
                         <FaUsers /> Quản lý Khách hàng

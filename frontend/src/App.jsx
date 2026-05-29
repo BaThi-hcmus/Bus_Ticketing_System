@@ -5,6 +5,7 @@ import BusManagement from './pages/BusManagement/BusManagement';
 import RouteManagement from './pages/RouteManagement/RouteManagement';
 import StationManagement from './pages/StationManagement/StationManagement';
 import PermissionManagement from './pages/PermissionManagement/PermissionManagement';
+import RoleManagement from './pages/RoleManagement/RoleManagement';
 
 function App() {
   return (
@@ -17,9 +18,11 @@ function App() {
         <Route path="routes" element={<RouteManagement />} />
         <Route path="stations" element={<StationManagement />} />
         <Route path="permissions" element={<PermissionManagement />} />
+        <Route path="roles" element={<RoleManagement />} />
       </Route>
     </Routes>
   );
 }
 
 export default App;
+
