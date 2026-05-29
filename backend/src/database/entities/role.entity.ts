@@ -16,6 +16,12 @@ export class Role {
     @Column()
     name: string;
 
+    @Column({ default: false })
+    deleted: boolean;
+
+    @Column({ default: 'active' })
+    status: string;
+
     @OneToMany(() => RolePermission, (rolePermission) => rolePermission.role)
     rolePermissions: RolePermission[];
 

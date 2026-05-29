@@ -10,6 +10,7 @@ import { StationModule } from './modules/admin/station/station.module';
 import { UserModule } from './modules/admin/user/user.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
+import { RoleModule } from './modules/role/role.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { redisStore } from 'cache-manager-redis-yet';
     StationModule,
     //AuthModule,
     UserModule,
+    RoleModule,
   ],
   controllers: [AppController],
   providers: [AppService],
