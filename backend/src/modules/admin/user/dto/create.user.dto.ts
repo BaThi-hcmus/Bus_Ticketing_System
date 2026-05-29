@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsEmail } from 'class-validator'
+import { IsNotEmpty, IsString, IsEmail, IsNumber, IsArray, IsInt } from 'class-validator'
 
 export class CreateUserDto {
     @IsNotEmpty({ message: 'Tên không được để trống' })
@@ -13,4 +13,12 @@ export class CreateUserDto {
     @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
     @IsString({ message: 'Mật khẩu phải là chuỗi kí tự' })
     password: string;
+
+    @IsNotEmpty({ message: 'Role không được để trống' })
+    @IsArray({ message: 'Role phải là một mảng' })
+    @IsInt({
+        each: true,
+        message: 'Các phần tử của mảng roles phải là số nguyên'
+    })
+    roles: number[];
 }

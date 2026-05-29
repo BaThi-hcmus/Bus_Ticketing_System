@@ -2,7 +2,8 @@ import {
     Entity,
     Column,
     PrimaryGeneratedColumn,
-    OneToMany
+    OneToMany,
+    CreateDateColumn
 } from 'typeorm'
 
 import { RolePermission } from './rolePermissions.entity';
@@ -21,6 +22,9 @@ export class Role {
 
     @Column({ default: 'active' })
     status: string;
+
+    @CreateDateColumn({ type: 'date' })
+    createdAt: Date;
 
     @OneToMany(() => RolePermission, (rolePermission) => rolePermission.role)
     rolePermissions: RolePermission[];

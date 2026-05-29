@@ -14,6 +14,27 @@ export class RoleService {
         @InjectRepository(RolePermission) private rolePermissionRepo: Repository<RolePermission>
     ) { }
 
+    async getRoles(): Promise<any> {
+        const roles = await this.roleRepo.find({
+            where: { deleted: false },
+            relations: ['rolePermissions', 'rolePermissions.permission']
+        })
+
+        if (roles) {
+            roles.forEach(role => {
+                let permissions: Permission[] = [];
+                if (role.rolePermissions && role.rolePermissions.length > 0) {
+                    for (const rolePermission of role.rolePermissions) {
+                        permissions.push(rolePermission?.permission)
+                    }
+                }
+                role['permissions'] = permissions;
+            })
+        }
+
+        return roles;
+    }
+
     async createRole(createRoleDto: CreateRoleDto): Promise<void> {
         // Kiểm tra tên role có tồn tại trong hệ thống chưa
         const isRoleExist = await this.roleRepo.findOne({
