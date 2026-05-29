@@ -11,6 +11,7 @@ import { UserModule } from './modules/admin/user/user.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 import { RoleModule } from './modules/role/role.module';
+import { PermissionModule } from './modules/permission/permission.module';
 
 @Module({
   imports: [
@@ -52,8 +53,9 @@ import { RoleModule } from './modules/role/role.module';
     RouteModule,
     StationModule,
     //AuthModule,
-    UserModule,
+    // UserModule,
     RoleModule,
+    PermissionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
