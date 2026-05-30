@@ -106,7 +106,7 @@ export class AuthService {
         await this.cacheManager.set(redisRefreshTokenKey, user.id, 30 * 24 * 60 * 60 * 1000);
 
         const redisPermissionsKey = `user:perms:${user.id}`;
-        await this.cacheManager.set(redisPermissionsKey, permissions, 15 * 60 * 1000);
+        await this.cacheManager.set(redisPermissionsKey, permissions, 1 * 60 * 1000);
 
         return {
             refreshToken,

@@ -4,13 +4,17 @@ import {
     Injectable,
     UnauthorizedException
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
 @Injectable()
 export class CustomJwtGuard implements CanActivate {
     // Inject JwtService để dùng hàm verify (hàm này sẽ tự băm và so sánh chữ ký hộ ta)
-    constructor(private jwtService: JwtService) { }
+    constructor(
+        private jwtService: JwtService,
+        private configService: ConfigService
+    ) { }
 
     // Bắt buộc phải có hàm canActivate, 1 request muốn được thông qua thì phải trả ra true
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -19,7 +23,7 @@ export class CustomJwtGuard implements CanActivate {
         const request = context.switchToHttp().getRequest<Request>();
 
         // bóc tách header ra
-        const authHeader = request.header['authorization'];
+        const authHeader = request.headers['authorization'];
         if (!authHeader) {
             throw new UnauthorizedException('Không tìm thấy header authorization');
         }
@@ -32,7 +36,7 @@ export class CustomJwtGuard implements CanActivate {
         // giải mã token để kiểm tra 
         try {
             const payloadJwt = await this.jwtService.verifyAsync(token, {
-                secret: 'Khóa siêu bí mật'
+                secret: this.configService.get<string>('JWT_SECRET')
             })
 
             const currentTime = Math.floor(Date.now() / 1000);
@@ -49,6 +53,7 @@ export class CustomJwtGuard implements CanActivate {
 
             return true;
         } catch (error) {
+            console.error('JWT Verification Error:', error);
             throw new UnauthorizedException('Token không hợp lệ');
         }
     }

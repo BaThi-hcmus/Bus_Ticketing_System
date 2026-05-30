@@ -1,4 +1,4 @@
-import { 
+import {
   Controller,
   Post,
   Body
@@ -8,14 +8,15 @@ import { LoginDto } from './dto/login.auth.dto';
 
 @Controller('admin/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
-      const result = await this.authService.login(loginDto);
+    const result = await this.authService.login(loginDto);
 
-      return {
-        message: 'Đăng nhập thành công'
-      }
+    return {
+      data: result,
+      message: 'Đăng nhập thành công'
+    }
   }
 }

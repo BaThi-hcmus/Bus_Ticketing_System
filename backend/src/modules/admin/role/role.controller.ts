@@ -1,13 +1,20 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { RoleService } from './role.service';
 import { CreateRoleDto } from './dto/create.role.dto';
 import { EditRoleDto } from './dto/edit.role.dto';
+import { CustomJwtGuard } from 'src/common/guard/jwt.guard';
+import { RequiredPermission } from 'src/common/decorator/permission.decorator';
+import { PermissionGuard } from 'src/common/guard/permission.guard';
 
 @Controller('admin/role')
 export class RoleController {
-  constructor(private readonly roleService: RoleService) { }
+  constructor(
+    private readonly roleService: RoleService,
+  ) { }
 
   @Get()
+  @UseGuards(CustomJwtGuard, PermissionGuard)
+  @RequiredPermission('role:view')
   async getRoles(
     @Query('status') status: string,
     @Query('keyword') keyword: string,

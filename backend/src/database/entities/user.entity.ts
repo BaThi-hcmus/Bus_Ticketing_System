@@ -25,19 +25,19 @@ export class User {
     @Column({ type: 'varchar', length: 15, unique: true, nullable: true })
     phoneNumber: string;
 
-    @Column({type: 'nvarchar'})
+    @Column({ type: 'nvarchar', nullable: true })
     avatar: string;
 
     @Column({ default: 'active' })
     status: string;
 
-    @Column({default: false})
+    @Column({ default: false })
     deleted: boolean;
 
     @CreateDateColumn()
     createdAt: Date;
 
-    @CreateDateColumn() 
+    @CreateDateColumn()
     updatedAt: Date;
 
     @OneToMany(() => Booking, (booking) => booking.user)
