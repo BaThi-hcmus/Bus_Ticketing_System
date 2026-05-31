@@ -17,6 +17,9 @@ export class Permission {
     @Column()
     name: string;
 
+    @Column({ nullable: true })
+    displayName: string;
+
     @Column({ default: false })
     deleted: boolean;
 

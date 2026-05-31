@@ -7,6 +7,7 @@ const PermissionModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     
     const [formData, setFormData] = useState({
         name: '',
+        displayName: '',
         status: 'active'
     });
     
@@ -17,11 +18,13 @@ const PermissionModal = ({ isOpen, onClose, onSubmit, initialData }) => {
             if (initialData) {
                 setFormData({
                     name: initialData.name || '',
+                    displayName: initialData.displayName || '',
                     status: initialData.status || 'active'
                 });
             } else {
                 setFormData({
                     name: '',
+                    displayName: '',
                     status: 'active'
                 });
             }
@@ -44,6 +47,7 @@ const PermissionModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         try {
             const payload = {
                 name: formData.name.trim(),
+                displayName: formData.displayName.trim()
             };
             if (isEditMode) {
                 payload.status = formData.status;
@@ -70,7 +74,7 @@ const PermissionModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 <form onSubmit={handleSubmit}>
                     <div className={styles.body}>
                         <div className={styles.formGroup}>
-                            <label>Tên quyền</label>
+                            <label>Mã quyền (Code)</label>
                             <input 
                                 type="text" 
                                 name="name"
@@ -78,6 +82,19 @@ const PermissionModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                                 value={formData.name}
                                 onChange={handleChange}
                                 placeholder="VD: user:create hoặc bus:view"
+                                required
+                            />
+                        </div>
+
+                        <div className={styles.formGroup}>
+                            <label>Tên hiển thị</label>
+                            <input 
+                                type="text" 
+                                name="displayName"
+                                className={styles.formControl}
+                                value={formData.displayName}
+                                onChange={handleChange}
+                                placeholder="VD: Tạo người dùng"
                                 required
                             />
                         </div>

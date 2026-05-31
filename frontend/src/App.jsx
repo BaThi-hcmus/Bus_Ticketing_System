@@ -8,6 +8,7 @@ import PermissionManagement from './pages/PermissionManagement/PermissionManagem
 import RoleManagement from './pages/RoleManagement/RoleManagement';
 import UserManagement from './pages/UserManagement/UserManagement';
 import Login from './pages/Login/Login';
+import Authorization from './pages/Authorization/Authorization';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="stations" element={<StationManagement />} />
         <Route path="permissions" element={<PermissionManagement />} />
         <Route path="roles" element={<RoleManagement />} />
+        <Route path="authorization" element={<Authorization />} />
         <Route path="users" element={<UserManagement />} />
       </Route>
     </Routes>

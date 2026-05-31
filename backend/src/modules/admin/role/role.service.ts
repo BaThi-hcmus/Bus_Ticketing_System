@@ -95,10 +95,26 @@ export class RoleService {
     }
 
     async getAllRoles(): Promise<Role[]> {
-        return await this.roleRepo.find({
+        const roles = await this.roleRepo.find({
             where: { deleted: false, status: 'active' },
-            order: { name: 'ASC' }
+            order: { name: 'ASC' },
+            relations: ['rolePermissions', 'rolePermissions.permission']
         });
+
+        // Map rolePermissions sang mảng permissions phẳng cho frontend
+        roles.forEach(role => {
+            let permissions: Permission[] = [];
+            if (role.rolePermissions && role.rolePermissions.length > 0) {
+                for (const rp of role.rolePermissions) {
+                    if (rp?.permission) {
+                        permissions.push(rp.permission);
+                    }
+                }
+            }
+            role['permissions'] = permissions;
+        });
+
+        return roles;
     }
 
     async createRole(createRoleDto: CreateRoleDto): Promise<void> {
@@ -203,9 +219,15 @@ export class RoleService {
             }
         }
 
-        // 4. Tiến hành cập nhật thông tin cơ bản
+        // 4. Tiến hành cập nhật thông tin cơ bản (nếu có)
         const { permissions, ...basicFields } = editRoleDto;
-        await this.roleRepo.update({ id: id }, basicFields);
+        // Lọc bỏ các field undefined (do class-transformer tạo ra)
+        const cleanFields = Object.fromEntries(
+            Object.entries(basicFields).filter(([_, v]) => v !== undefined)
+        );
+        if (Object.keys(cleanFields).length > 0) {
+            await this.roleRepo.update({ id: id }, cleanFields);
+        }
 
         // 5. Lấy lại thông tin sau khi cập nhật để trả về
         const updatedRole = await this.roleRepo.findOne({

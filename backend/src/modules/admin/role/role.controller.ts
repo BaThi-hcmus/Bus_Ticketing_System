@@ -13,8 +13,8 @@ export class RoleController {
   ) { }
 
   @Get()
-  @UseGuards(CustomJwtGuard, PermissionGuard)
-  @RequiredPermission('role:view')
+  // @UseGuards(CustomJwtGuard, PermissionGuard)
+  // @RequiredPermission('role:view')
   async getRoles(
     @Query('status') status: string,
     @Query('keyword') keyword: string,

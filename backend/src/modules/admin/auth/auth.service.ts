@@ -92,7 +92,10 @@ export class AuthService {
         const accessTokenPayload = {
             sub: user.id,
             email: user.email,
-            roles: roles
+            roles: roles,
+            fullName: user.fullName,
+            phoneNumber: user.phoneNumber,
+            avatar: user.avatar
         }
 
         //tạo access token với TTL là 15 phút

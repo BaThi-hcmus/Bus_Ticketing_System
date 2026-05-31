@@ -6,6 +6,10 @@ export class EditPermissionDto {
     name?: string;
 
     @IsOptional()
+    @IsString({ message: 'Tên hiển thị của quyền phải là 1 chuỗi kí tự' })
+    displayName: string;
+
+    @IsOptional()
     @IsIn(['active', 'inactive'], { message: 'Trạng thái phải là active hoặc inactive' })
     status?: string;
 
