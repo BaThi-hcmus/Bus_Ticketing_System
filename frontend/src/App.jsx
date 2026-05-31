@@ -7,13 +7,15 @@ import StationManagement from './pages/StationManagement/StationManagement';
 import PermissionManagement from './pages/PermissionManagement/PermissionManagement';
 import RoleManagement from './pages/RoleManagement/RoleManagement';
 import UserManagement from './pages/UserManagement/UserManagement';
+import Login from './pages/Login/Login';
 
 function App() {
   return (
     <Routes>
       {/* Redirect root to admin buses for now */}
       <Route path="/" element={<Navigate to="/admin/buses" replace />} />
-      
+      <Route path="/admin/login" element={<Login />} />
+
       <Route path="/admin" element={<AdminLayout />}>
         <Route path="buses" element={<BusManagement />} />
         <Route path="routes" element={<RouteManagement />} />

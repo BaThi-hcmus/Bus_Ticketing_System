@@ -12,8 +12,11 @@ async function bootstrap() {
     forbidNonWhitelisted: true, // Báo lỗi nếu Frontend cố tình truyền thuộc tính lạ lên
     transform: true, // Tự động ép kiểu dữ liệu từ chuỗi sang số nếu DTO khai báo là số
   }));
-  // Bật CORS để cho phép Frontend gọi API
-  app.enableCors();
+  // Bật CORS để cho phép Frontend gọi API (kèm cookie)
+  app.enableCors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+  });
 
   app.use(cookieParser()); // giúp nestJS đọc được cookie do frontend gửi 
 
