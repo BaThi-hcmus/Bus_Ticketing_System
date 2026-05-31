@@ -12,49 +12,55 @@ const AdminLayout = () => {
                     Bus Admin
                 </div>
                 <nav className={styles.nav}>
-                    <NavLink 
-                        to="/admin/buses" 
-                        className={({isActive}) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
+                    <NavLink
+                        to="/admin/buses"
+                        className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
                     >
                         <FaBus /> Quản lý Xe Bus
                     </NavLink>
-                    <NavLink 
-                        to="/admin/routes" 
-                        className={({isActive}) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
+                    <NavLink
+                        to="/admin/routes"
+                        className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
                     >
                         <FaRoute /> Quản lý Tuyến đường
                     </NavLink>
-                    <NavLink 
-                        to="/admin/stations" 
-                        className={({isActive}) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
+                    <NavLink
+                        to="/admin/stations"
+                        className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
                     >
                         <FaMapMarkerAlt /> Quản lý Trạm dừng
                     </NavLink>
-                    <NavLink 
-                        to="/admin/permissions" 
-                        className={({isActive}) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
+                    <NavLink
+                        to="/admin/permissions"
+                        className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
                     >
                         <FaShieldAlt /> Quản lý Quyền
                     </NavLink>
-                    <NavLink 
-                        to="/admin/roles" 
-                        className={({isActive}) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
+                    <NavLink
+                        to="/admin/category-permissions"
+                        className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
+                    >
+                        <FaShieldAlt /> Quản lý Nhóm quyền
+                    </NavLink>
+                    <NavLink
+                        to="/admin/roles"
+                        className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
                     >
                         <FaUserShield /> Quản lý Vai trò
                     </NavLink>
-                    <NavLink 
-                        to="/admin/authorization" 
-                        className={({isActive}) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
+                    <NavLink
+                        to="/admin/authorization"
+                        className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
                     >
                         <FaKey /> Phân quyền
                     </NavLink>
-                    <NavLink 
-                        to="/admin/users" 
-                        className={({isActive}) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
+                    <NavLink
+                        to="/admin/users"
+                        className={({ isActive }) => isActive ? `${styles.navItem} ${styles.active}` : styles.navItem}
                     >
                         <FaUsers /> Quản lý Người dùng
                     </NavLink>
-                    <div className={styles.navItem} style={{opacity: 0.5, cursor: 'not-allowed'}}>
+                    <div className={styles.navItem} style={{ opacity: 0.5, cursor: 'not-allowed' }}>
                         <FaTicketAlt /> Quản lý Vé
                     </div>
                 </nav>
@@ -68,7 +74,7 @@ const AdminLayout = () => {
                         <div className={styles.avatar}>A</div>
                     </div>
                 </header>
-                
+
                 <main className={styles.content}>
                     <Outlet />
                 </main>

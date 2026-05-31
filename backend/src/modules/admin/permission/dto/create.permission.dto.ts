@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsInt, IsNotEmpty, IsString } from "class-validator";
 
 export class CreatePermissionDto {
     @IsNotEmpty({ message: 'Tên quyền không được để trống' })
@@ -8,4 +8,8 @@ export class CreatePermissionDto {
     @IsNotEmpty({ message: 'Tên hiển thị của quyền không được để trống' })
     @IsString({ message: 'Tên hiển thị của quyền phải là 1 chuỗi kí tự' })
     displayName: string;
+
+    @IsNotEmpty({ message: 'ID của nhóm quyền không được để trống' })
+    @IsInt({ message: 'ID của nhóm quyền phải là một số nguyên' })
+    categoryPermissionId: number;
 }

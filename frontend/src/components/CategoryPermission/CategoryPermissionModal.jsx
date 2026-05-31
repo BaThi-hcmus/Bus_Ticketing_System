@@ -1,48 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
-import styles from './PermissionModal.module.css';
+import styles from './CategoryPermissionModal.module.css';
 
-import api from '../../services/api';
-
-const PermissionModal = ({ isOpen, onClose, onSubmit, initialData }) => {
+const CategoryPermissionModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     const isEditMode = !!initialData;
     
     const [formData, setFormData] = useState({
         name: '',
-        displayName: '',
-        categoryPermissionId: '',
         status: 'active'
     });
     
     const [loading, setLoading] = useState(false);
-    const [categories, setCategories] = useState([]);
-
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const res = await api.get('/admin/category-permission/all');
-                setCategories(res.data.data || []);
-            } catch (err) {
-                console.error("Failed to fetch categories", err);
-            }
-        };
-        fetchCategories();
-    }, []);
 
     useEffect(() => {
         if (isOpen) {
             if (initialData) {
                 setFormData({
                     name: initialData.name || '',
-                    displayName: initialData.displayName || '',
-                    categoryPermissionId: initialData.categoryPermissionId || '',
                     status: initialData.status || 'active'
                 });
             } else {
                 setFormData({
                     name: '',
-                    displayName: '',
-                    categoryPermissionId: '',
                     status: 'active'
                 });
             }
@@ -64,9 +43,7 @@ const PermissionModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         setLoading(true);
         try {
             const payload = {
-                name: formData.name.trim(),
-                displayName: formData.displayName.trim(),
-                categoryPermissionId: parseInt(formData.categoryPermissionId, 10)
+                name: formData.name.trim()
             };
             if (isEditMode) {
                 payload.status = formData.status;
@@ -84,7 +61,7 @@ const PermissionModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         <div className={styles.overlay}>
             <div className={styles.modal}>
                 <div className={styles.header}>
-                    <h2 className={styles.title}>{isEditMode ? 'Chỉnh sửa quyền' : 'Thêm quyền mới'}</h2>
+                    <h2 className={styles.title}>{isEditMode ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới'}</h2>
                     <button type="button" className={styles.closeBtn} onClick={onClose}>
                         <FaTimes />
                     </button>
@@ -93,45 +70,16 @@ const PermissionModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                 <form onSubmit={handleSubmit}>
                     <div className={styles.body}>
                         <div className={styles.formGroup}>
-                            <label>Mã quyền (Code)</label>
+                            <label>Tên danh mục</label>
                             <input 
                                 type="text" 
                                 name="name"
                                 className={styles.formControl}
                                 value={formData.name}
                                 onChange={handleChange}
-                                placeholder="VD: user:create hoặc bus:view"
+                                placeholder="VD: Xe buýt"
                                 required
                             />
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label>Tên hiển thị</label>
-                            <input 
-                                type="text" 
-                                name="displayName"
-                                className={styles.formControl}
-                                value={formData.displayName}
-                                onChange={handleChange}
-                                placeholder="VD: Tạo người dùng"
-                                required
-                            />
-                        </div>
-
-                        <div className={styles.formGroup}>
-                            <label>Nhóm quyền</label>
-                            <select 
-                                name="categoryPermissionId"
-                                className={styles.formControl}
-                                value={formData.categoryPermissionId}
-                                onChange={handleChange}
-                                required
-                            >
-                                <option value="">-- Chọn nhóm quyền --</option>
-                                {categories.map(cat => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                ))}
-                            </select>
                         </div>
 
                         {isEditMode && (
@@ -164,4 +112,4 @@ const PermissionModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     );
 };
 
-export default PermissionModal;
+export default CategoryPermissionModal;

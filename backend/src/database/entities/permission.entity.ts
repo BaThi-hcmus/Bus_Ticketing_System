@@ -3,11 +3,12 @@ import {
     Column,
     PrimaryGeneratedColumn,
     OneToMany,
-    CreateDateColumn
+    CreateDateColumn,
+    ManyToOne
 } from 'typeorm'
 
 import { RolePermission } from './rolePermissions.entity';
-import { Role } from './role.entity';
+import { CategoryPermission } from './categoryPermission.entity';
 
 @Entity('Permissions')
 export class Permission {
@@ -20,6 +21,9 @@ export class Permission {
     @Column({ nullable: true })
     displayName: string;
 
+    @Column({ nullable: true })
+    categoryPermissionId: number;
+
     @Column({ default: false })
     deleted: boolean;
 
@@ -31,4 +35,7 @@ export class Permission {
 
     @OneToMany(() => RolePermission, (rolePermission) => rolePermission.permission)
     rolePermissions: RolePermission[];
+
+    @ManyToOne(() => CategoryPermission, (categoryPermission) => categoryPermission.permissions)
+    categoryPermission: CategoryPermission;
 }
