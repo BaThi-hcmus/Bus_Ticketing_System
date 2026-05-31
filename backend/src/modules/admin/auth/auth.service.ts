@@ -96,7 +96,7 @@ export class AuthService {
         }
 
         //tạo access token với TTL là 15 phút
-        const accessToken = this.jwtService.sign(accessTokenPayload, { expiresIn: '15m' });
+        const accessToken = this.jwtService.sign(accessTokenPayload, { expiresIn: '3m' });
 
         //tạo refresh token bằng chuỗi random, độ lớn 40 bytes, tức là gồm 80 kí tự trong hệ thập lục phân
         const refreshToken = crypto.randomBytes(40).toString('hex');
@@ -106,7 +106,7 @@ export class AuthService {
         await this.cacheManager.set(redisRefreshTokenKey, user.id, 30 * 24 * 60 * 60 * 1000);
 
         const redisPermissionsKey = `user:perms:${user.id}`;
-        await this.cacheManager.set(redisPermissionsKey, permissions, 1 * 60 * 1000);
+        await this.cacheManager.set(redisPermissionsKey, permissions, 15 * 60 * 1000);
 
         return {
             refreshToken,

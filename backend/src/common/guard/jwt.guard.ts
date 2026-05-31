@@ -22,28 +22,19 @@ export class CustomJwtGuard implements CanActivate {
         // Lấy đối tượng Request của Express ra
         const request = context.switchToHttp().getRequest<Request>();
 
-        // bóc tách header ra
-        const authHeader = request.headers['authorization'];
-        if (!authHeader) {
-            throw new UnauthorizedException('Không tìm thấy header authorization');
-        }
+        // bóc tách token ra
+        const token = request.cookies['access_token'];
 
-        const [bearer, token] = authHeader.split(' ');
-        if (bearer != 'Bearer' || !token) {
-            throw new UnauthorizedException('Sai định dạng token, phải là "Bearer token"');
+        if (!token) {
+            throw new UnauthorizedException('Không tồn tại token trong Cookie');
         }
 
         // giải mã token để kiểm tra 
         try {
+            // Hàm này tự xét thời gian hết hạn và so sánh chữ ký số để kiểm tra token có bị thay đổi không
             const payloadJwt = await this.jwtService.verifyAsync(token, {
                 secret: this.configService.get<string>('JWT_SECRET')
             })
-
-            const currentTime = Math.floor(Date.now() / 1000);
-
-            if (payloadJwt.exp && currentTime > payloadJwt.exp) {
-                throw new UnauthorizedException('Access Token đã hết hạn sử dụng');
-            }
 
             request['user'] = {
                 id: payloadJwt.id,
