@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Permission } from 'src/database/entities/permission.entity';
+import { CategoryPermission } from 'src/database/entities/categoryPermission.entity';
 import { Repository, Not } from 'typeorm';
 import { CreatePermissionDto } from './dto/create.permission.dto';
 import { EditPermissionDto } from './dto/edit.permission.dto';
@@ -13,6 +14,7 @@ import { Sort } from 'src/utils/sort.ulti';
 export class PermissionService {
     constructor(
         @InjectRepository(Permission) private permisisonRepo: Repository<Permission>,
+        @InjectRepository(CategoryPermission) private categoryRepo: Repository<CategoryPermission>,
         private readonly filterStatus: FilterStatus,
         private readonly search: Search,
         private readonly pagination: Pagination,
@@ -62,7 +64,8 @@ export class PermissionService {
             where: whereCondition,
             order: orderCondition,
             skip: paginationObject.startIndex,
-            take: paginationObject.itemPerPage
+            take: paginationObject.itemPerPage,
+            relations: ['categoryPermission'],
         })
 
         return {
@@ -78,26 +81,43 @@ export class PermissionService {
     async getAllPermissions(): Promise<Permission[]> {
         return await this.permisisonRepo.find({
             where: { deleted: false, status: 'active' },
-            order: { name: 'ASC' }
+            order: { name: 'ASC' },
+            relations: ['categoryPermission'],
         });
     }
 
+    private async assertCategoryExists(categoryPermissionId: number): Promise<CategoryPermission> {
+        const category = await this.categoryRepo.findOne({
+            where: { id: categoryPermissionId, deleted: false },
+        });
+
+        if (!category) {
+            throw new NotFoundException(`Không tìm thấy nhóm quyền có ID [${categoryPermissionId}]`);
+        }
+
+        return category;
+    }
+
     async createPermission(createPermissionDto: CreatePermissionDto): Promise<void> {
-        // kiểm tra tên quyền có tồn tại chưa
         const isPermissionExist = await this.permisisonRepo.findOne({
             where: {
                 deleted: false,
-                name: createPermissionDto.name
-            }
-        })
+                name: createPermissionDto.name,
+            },
+        });
+
         if (isPermissionExist) {
-            throw new ConflictException('Quyển này đã tồn tại trong hệ thống');
+            throw new ConflictException('Quyền này đã tồn tại trong hệ thống');
         }
 
-        // Lưu vào db
+        await this.assertCategoryExists(createPermissionDto.categoryPermissionId);
+
         const newPermisison = this.permisisonRepo.create({
-            name: createPermissionDto.name
-        })
+            name: createPermissionDto.name,
+            displayName: createPermissionDto.displayName,
+            categoryPermissionId: createPermissionDto.categoryPermissionId,
+        });
+
         await this.permisisonRepo.save(newPermisison);
     }
 
@@ -119,29 +139,32 @@ export class PermissionService {
                 where: {
                     id: Not(id),
                     name: name,
-                    deleted: false
-                }
-            })
+                    deleted: false,
+                },
+            });
 
             if (isPermissionExist) {
                 throw new ConflictException(`Quyền [${name}] đã tồn tại trong hệ thống`);
             }
         }
 
-        // 3. Tiến hành cập nhật
-        await this.permisisonRepo.update(
-            { id: id },
-            editPermissionDto
-        )
+        if (editPermissionDto.categoryPermissionId != null) {
+            await this.assertCategoryExists(editPermissionDto.categoryPermissionId);
+        }
 
-        // 4. Lấy lại thông tin sau khi cập nhật để trả về
-        const updatedPermission = await this.permisisonRepo.findOne({ where: { id: id } });
-        return updatedPermission as any;
+        await this.permisisonRepo.update({ id: id }, editPermissionDto);
+
+        const updatedPermission = await this.permisisonRepo.findOne({
+            where: { id: id },
+            relations: ['categoryPermission'],
+        });
+        return updatedPermission as Permission;
     }
 
-    async getPermissionDetail(id: number): Promise<any> {
+    async getPermissionDetail(id: number): Promise<Permission> {
         const permission = await this.permisisonRepo.findOne({
-            where: { id: id, deleted: false }
+            where: { id: id, deleted: false },
+            relations: ['categoryPermission'],
         });
 
         if (!permission) {

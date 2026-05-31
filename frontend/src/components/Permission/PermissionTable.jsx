@@ -11,6 +11,7 @@ const PermissionTable = ({ permissions, startIndex = 0, onEdit, onDelete, onTogg
                         <th>STT</th>
                         <th>Mã quyền (Code)</th>
                         <th>Tên hiển thị</th>
+                        <th>Nhóm quyền</th>
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
                     </tr>
@@ -18,7 +19,7 @@ const PermissionTable = ({ permissions, startIndex = 0, onEdit, onDelete, onTogg
                 <tbody>
                     {permissions.length === 0 ? (
                         <tr>
-                            <td colSpan="5" className={styles.emptyState}>
+                            <td colSpan="6" className={styles.emptyState}>
                                 Không tìm thấy quyền nào.
                             </td>
                         </tr>
@@ -28,6 +29,7 @@ const PermissionTable = ({ permissions, startIndex = 0, onEdit, onDelete, onTogg
                                 <td>{startIndex + index + 1}</td>
                                 <td><code style={{background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px', fontSize: '0.85em'}}>{permission.name}</code></td>
                                 <td style={{ fontWeight: 600 }}>{permission.displayName || permission.name}</td>
+                                <td>{permission.categoryPermission?.name || '—'}</td>
                                 <td>
                                     <button 
                                         className={`${styles.statusBadge} ${permission.status === 'active' ? styles.statusActive : styles.statusInactive}`}

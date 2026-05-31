@@ -4,7 +4,8 @@ import {
     PrimaryGeneratedColumn,
     OneToMany,
     CreateDateColumn,
-    ManyToOne
+    ManyToOne,
+    JoinColumn,
 } from 'typeorm'
 
 import { RolePermission } from './rolePermissions.entity';
@@ -37,5 +38,6 @@ export class Permission {
     rolePermissions: RolePermission[];
 
     @ManyToOne(() => CategoryPermission, (categoryPermission) => categoryPermission.permissions)
+    @JoinColumn({ name: 'categoryPermissionId' })
     categoryPermission: CategoryPermission;
 }

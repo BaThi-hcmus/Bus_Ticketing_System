@@ -66,6 +66,22 @@
     color: var(--text-primary);
 }
 
+.required {
+    color: var(--danger-color);
+}
+
+.hint {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.warningText {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--danger-color);
+}
+
 .formControl {
     width: 100%;
     padding: 10px 12px;

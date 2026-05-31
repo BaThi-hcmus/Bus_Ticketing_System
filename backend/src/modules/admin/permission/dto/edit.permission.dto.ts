@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsIn, IsBoolean, IsInt } from 'class-validator';
+import { IsOptional, IsString, IsIn, IsBoolean, IsInt, Min } from 'class-validator';
 
 export class EditPermissionDto {
     @IsOptional()
@@ -7,11 +7,12 @@ export class EditPermissionDto {
 
     @IsOptional()
     @IsString({ message: 'Tên hiển thị của quyền phải là 1 chuỗi kí tự' })
-    displayName: string;
+    displayName?: string;
 
     @IsOptional()
-    @IsInt({ message: 'ID của nhóm quyền phải là một số nguyên' })
-    categoryPermissionId: number;
+    @IsInt({ message: 'Vui lòng chọn nhóm quyền hợp lệ' })
+    @Min(1, { message: 'Vui lòng chọn nhóm quyền hợp lệ' })
+    categoryPermissionId?: number;
 
     @IsOptional()
     @IsIn(['active', 'inactive'], { message: 'Trạng thái phải là active hoặc inactive' })

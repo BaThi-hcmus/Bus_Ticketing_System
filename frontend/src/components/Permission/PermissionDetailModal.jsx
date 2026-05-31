@@ -32,6 +32,10 @@ const PermissionDetailModal = ({ isOpen, onClose, permission }) => {
                             <span className={styles.value} style={{ fontFamily: 'monospace', fontWeight: 600 }}>{permission.name}</span>
                         </div>
                         <div className={styles.infoItem}>
+                            <span className={styles.label}>Nhóm quyền</span>
+                            <span className={styles.value}>{permission.categoryPermission?.name || '—'}</span>
+                        </div>
+                        <div className={styles.infoItem}>
                             <span className={styles.label}>Tên hiển thị</span>
                             <span className={styles.value} style={{ fontWeight: 600 }}>{permission.displayName}</span>
                         </div>
