@@ -3,7 +3,8 @@ import {
     ExecutionContext,
     Injectable,
     ForbiddenException, // lỗi phân quyền 
-    Inject
+    Inject,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import type { Cache } from 'cache-manager'
@@ -36,69 +37,75 @@ export class PermissionGuard implements CanActivate {
 
         // Lấy đối tượng Request của Express ra
         const request = context.switchToHttp().getRequest<Request>();
+        // Lấy sessionID
+        const sessionId = request.cookies['session_id'];
+        if (!sessionId) {
+            throw new UnauthorizedException('Không tìm thấy sessionId, vui lòng đăng nhập lại');
+        }
 
-        const id = request['user'].id;
+        // Truy vấn vào redis để lấy user_id
+        const userId = await this.cacheManager.get(`session_id:${sessionId}`);
+        if (!userId) {
+            throw new UnauthorizedException('Không tìm thấy user_id trong cache, vui lòng đăng nhập lại');
+        }
 
+        // Truy vấn trong sql_server để lấy permission
+        let user: User | null = null;
         try {
-            //truy vấn trong redis
-            const redisPermissionsKey = `user:perms:${id}`;
-            let permissions: string[] | undefined = await this.cacheManager.get(redisPermissionsKey);
+            user = await this.userRepo.findOne({
+                where: {
+                    deleted: false,
+                    id: Number(userId)
+                },
+                relations: [
+                    'userRoles',
+                    'userRoles.role',
+                    'userRoles.role.rolePermissions',
+                    'userRoles.role.rolePermissions.permission'
+                ]
+            })
+        } catch (error) {
+            throw new ForbiddenException('Hệ thống gặp lỗi khi xác thực quyền của bạn');
+        }
+    
+        // Nếu có user thì lấy ra permissions 
+        let permissions: string[] = [];
+        if (user) {
+            const permissionsSet = new Set<string>();
 
-            // nếu dữ liệu trong redis không còn thì vào sql server để lấy ra
-            // và nạp lại vào redis
-            if (!permissions) {
-                const user = await this.userRepo.findOne({
-                    where: {
-                        deleted: false,
-                        id: id
-                    },
-                    relations: [
-                        'userRoles',
-                        'userRoles.role',
-                        'userRoles.role.rolePermissions',
-                        'userRoles.role.rolePermissions.permission'
-                    ]
-                })
+            // lấy ra permissions
+            if (user.userRoles && user.userRoles.length > 0) {
+                for (const userRole of user.userRoles) {
 
-                // Nếu có user thì lấy ra permissions và lưu lại vào redis
-                if (user) {
-                    const permissionsSet = new Set<string>();
+                    if (userRole.role) {
+                        if (userRole.role.rolePermissions && userRole.role.rolePermissions.length > 0) {
+                            for (const rolePermission of userRole.role.rolePermissions) {
 
-                    // lấy ra permissions
-                    if (user.userRoles && user.userRoles.length > 0) {
-                        for (const userRole of user.userRoles) {
-
-                            if (userRole.role) {
-                                if (userRole.role.rolePermissions && userRole.role.rolePermissions.length > 0) {
-                                    for (const rolePermission of userRole.role.rolePermissions) {
-
-                                        if (rolePermission.permission) {
-                                            permissionsSet.add(rolePermission.permission.name);
-                                        }
-                                    }
+                                if (rolePermission.permission) {
+                                    permissionsSet.add(rolePermission.permission.name);
                                 }
                             }
                         }
                     }
-                    permissions = Array.from(permissionsSet);
-
-                    // nạp lại vào redis
-                    await this.cacheManager.set(redisPermissionsKey, permissions, 15 * 60 * 1000);
-                } else {
-                    throw new ForbiddenException(`Lỗi không tìm thấy người dùng có ID là: ${id}`);
                 }
             }
+            permissions = Array.from(permissionsSet);
+        } else {
+            throw new ForbiddenException(`Lỗi không tìm thấy người dùng có ID là: ${userId}`);
+        }
 
-            if (!permissions.includes(requiredPermission)) {
-                throw new ForbiddenException('Bạn không có quyền truy cập vào API này');
-            }
-
-            // Gắn thêm thông tin permissions vào user 
-            request['user'].permissions = permissions;
-
-            return true;
-        } catch (error) {
+        // Kiểm tra quyền
+        if (!permissions.includes(requiredPermission)) {
             throw new ForbiddenException('Bạn không có quyền truy cập vào API này');
         }
+
+        // Gắn thông tin user vào request
+        request['user'] = {
+            id: user.id,
+            email: user.email,
+            permissions: permissions
+        }
+
+        return true;
     }
 }

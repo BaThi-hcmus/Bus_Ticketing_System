@@ -1,9 +1,7 @@
 import {
     Injectable, // dùng khi 1 class hoặc 1 interface muốn được inject ở 1 nơi khác
     UnauthorizedException, // lỗi xác thực (authen)
-    ConflictException, // Lỗi xung đột
     Inject,
-    ExecutionContext
 } from '@nestjs/common';
 import { LoginDto } from './dto/login.auth.dto';
 import * as argon2 from 'argon2'
@@ -15,7 +13,6 @@ import { Repository } from 'typeorm';
 
 // Tìm cái Repository tương ứng để tiêm vào
 import { InjectRepository } from '@nestjs/typeorm';
-import { JwtService } from '@nestjs/jwt';
 
 // access token và refresh token
 // CACHE_MANAGER là 1 string
@@ -36,7 +33,6 @@ export class AuthService {
         // Tiêm Repo User vào và khai báo biên userRepo với kiểu là Repository
         // để có thể dùng được các hàm .find(), .findOne(), .save(), .delete(),...
         @InjectRepository(User) private readonly userRepo: Repository<User>,
-        private readonly jwtService: JwtService,
         @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) { }
 
@@ -71,114 +67,26 @@ export class AuthService {
             throw new UnauthorizedException('Tài khoản của bạn đang bị khóa');
         }
 
-        const roles = user.userRoles.map(item => item.role?.name).filter(Boolean);
-        const permissionsSet = new Set<string>();
-
-        // lấy ra permissions
-        if (user.userRoles && user.userRoles.length > 0) {
-            for (const userRole of user.userRoles) {
-
-                if (userRole.role) {
-                    if (userRole.role.rolePermissions && userRole.role.rolePermissions.length > 0) {
-                        for (const rolePermission of userRole.role.rolePermissions) {
-
-                            if (rolePermission.permission) {
-                                permissionsSet.add(rolePermission.permission.name);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        const permissions = Array.from(permissionsSet);
-
-        // Tạo access token (chuỗi JWT) và refresh token (chuỗi string random bằng crypto)
-        const accessTokenPayload = {
-            sub: user.id,
-            email: user.email,
-            roles: roles,
-            fullName: user.fullName,
-            phoneNumber: user.phoneNumber,
-            avatar: user.avatar
-        }
-
-        //tạo access token với TTL là 15 phút
-        const accessToken = this.jwtService.sign(accessTokenPayload, { expiresIn: '15m' });
-
-        //tạo refresh token bằng chuỗi random, độ lớn 40 bytes, tức là gồm 80 kí tự trong hệ thập lục phân
-        const refreshToken = crypto.randomBytes(40).toString('hex');
+        //tạo session id bằng chuỗi random, độ lớn 40 bytes, tức là gồm 80 kí tự trong hệ thập lục phân
+        const sessionId = crypto.randomBytes(40).toString('hex');
 
         //Lưu vào trong redis 
-        const redisRefreshTokenKey = `refresh_token:${refreshToken}`;
-        await this.cacheManager.set(redisRefreshTokenKey, user.id, 30 * 24 * 60 * 60 * 1000);
-
-        const redisPermissionsKey = `user:perms:${user.id}`;
-        await this.cacheManager.set(redisPermissionsKey, permissions, 15 * 60 * 1000);
+        const redisSessionIdKey = `session_id:${sessionId}`;
+        await this.cacheManager.set(redisSessionIdKey, user.id, 24 * 60 * 60 * 1000);
 
         return {
-            refreshToken,
-            accessToken
-        }
-    }
-
-    async refreshToken(request: Request): Promise<any> {
-        // bóc tách token ra
-        const refreshToken = request.cookies['refresh_token'];
-
-        // Nếu refresh token đã hết hạn lưu trong cookie
-        if (!refreshToken) {
-            throw new UnauthorizedException('Refresh token đã hết hạn, vui lòng đăng nhập lại');
-        }
-
-        // Truy vấn trong redis
-        const redisRefreshToken = await this.cacheManager.get(`refresh_token:${refreshToken}`);
-        if (!redisRefreshToken) {
-            // Khi refresh token hết hạn thì user phải đăng nhập lại
-            throw new UnauthorizedException('Refresh token đã hết hạn, vui lòng đăng nhập lại');
-        }
-
-        // Cấp cho user 1 access_token mới (guard sẽ tự nạp lại vào redis trong lần gọi api tiếp theo)
-        // Lúc này redisRefreshToken là id user => truy vấn vào sql server để lấy thông tin
-        const user = await this.userRepo.findOne({
-            where: {
-                id: Number(redisRefreshToken),
-                deleted: false
-            },
-            relations: [
-                'userRoles',
-                'userRoles.role'
-            ]
-        })
-
-        if (!user) {
-            throw new UnauthorizedException('User không tồn tại hoặc đã bị xóa trong database');
-        }
-
-        // Chuẩn bị payload để tạo access token
-        const roles = user.userRoles.map(item => item.role?.name).filter(Boolean);
-        const payload = {
-            sub: user.id,
-            email: user.email,
-            roles: roles,
-            fullName: user.fullName,
-            phoneNumber: user.phoneNumber,
-            avatar: user.avatar
-        }
-        const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-
-        return {
-            accessToken
+            sessionId
         }
     }
 
     async logout(request: Request): Promise<void> {
         // Lấy refresh token
-        const refreshToken = request.cookies['refresh_token'];
+        const sessionId = request.cookies['session_id'];
 
         // Nếu đã hết hạn thì bỏ qua
-        if (refreshToken) {
+        if (sessionId) {
             // xóa trong redis
-            const redisKey = `refresh_token:${refreshToken}`;
+            const redisKey = `session_id:${sessionId}`;
             await this.cacheManager.del(redisKey);
         }
     }

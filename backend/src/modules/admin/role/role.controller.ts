@@ -2,7 +2,6 @@ import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@ne
 import { RoleService } from './role.service';
 import { CreateRoleDto } from './dto/create.role.dto';
 import { EditRoleDto } from './dto/edit.role.dto';
-import { CustomJwtGuard } from 'src/common/guard/jwt.guard';
 import { RequiredPermission } from 'src/common/decorator/permission.decorator';
 import { PermissionGuard } from 'src/common/guard/permission.guard';
 

@@ -23,45 +23,16 @@ export class AuthController {
     const result = await this.authService.login(loginDto);
 
     // Cất Access Token vào Cookie (Mọi API đều được đính kèm nhờ path: '/')
-    response.cookie('access_token', result.accessToken, {
+    response.cookie('session_id', result.sessionId, {
       httpOnly: true,
       secure: true, // Chỉ chạy qua HTTPS (khi deploy thực tế)
       sameSite: 'lax',
       path: '/', // Có mặt trên mọi API
-      maxAge: 15 * 60 * 1000, // TTL: 15 phút (tính bằng mili-giây)
-    });
-
-    // 2. Cất Refresh Token vào Cookie (Chỉ API refresh mới được cõng theo nhờ path: '/admin/auth/refresh')
-    response.cookie('refresh_token', result.refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/admin/auth',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // TTL: 30 ngày
+      maxAge: 24 * 60 * 60 * 1000, // TTL: 1 ngày
     });
 
     return {
       message: 'Đăng nhập thành công'
-    }
-  }
-
-  @Post('refresh')
-  async refreshToken(
-    @Res({ passthrough: true }) response: express.Response,
-    @Req() request: Request
-  ) {
-    const result = await this.authService.refreshToken(request);
-
-    response.cookie('access_token', result.accessToken, {
-      httpOnly: true,
-      secure: true, // Chỉ chạy qua HTTPS (khi deploy thực tế)
-      sameSite: 'lax',
-      path: '/', // Có mặt trên mọi API
-      maxAge: 15 * 60 * 1000, // TTL: 15 phút (tính bằng mili-giây)
-    })
-
-    return {
-      message: 'Cấp lại access token thành công'
     }
   }
 
@@ -72,22 +43,13 @@ export class AuthController {
   ) {
     const result = await this.authService.logout(request);
 
-    // set lại thời gian hết hạn cho 2 token
-    response.cookie('access_token', '', {
+    // set lại thời gian hết hạn cho session_id
+    response.cookie('session_id', '', {
       httpOnly: true,
       secure: true, // Chỉ chạy qua HTTPS (khi deploy thực tế)
       sameSite: 'lax',
       path: '/', // Có mặt trên mọi API
       maxAge: 0, // TTL: 15 phút (tính bằng mili-giây)
-    });
-
-    // 2. Cất Refresh Token vào Cookie (Chỉ API refresh mới được cõng theo nhờ path: '/admin/auth/refresh')
-    response.cookie('refresh_token', '', {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/admin/auth',
-      maxAge: 0, // TTL: 30 ngày
     });
 
     return {
