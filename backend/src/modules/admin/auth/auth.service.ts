@@ -170,4 +170,16 @@ export class AuthService {
             accessToken
         }
     }
+
+    async logout(request: Request): Promise<void> {
+        // Lấy refresh token
+        const refreshToken = request.cookies['refresh_token'];
+
+        // Nếu đã hết hạn thì bỏ qua
+        if (refreshToken) {
+            // xóa trong redis
+            const redisKey = `refresh_token:${refreshToken}`;
+            await this.cacheManager.del(redisKey);
+        }
+    }
 }

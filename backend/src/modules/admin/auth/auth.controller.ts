@@ -36,7 +36,7 @@ export class AuthController {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
-      path: '/admin/auth/refresh',
+      path: '/admin/auth',
       maxAge: 30 * 24 * 60 * 60 * 1000, // TTL: 30 ngày
     });
 
@@ -62,6 +62,36 @@ export class AuthController {
 
     return {
       message: 'Cấp lại access token thành công'
+    }
+  }
+
+  @Post('logout')
+  async logout(
+    @Res({ passthrough: true }) response: express.Response,
+    @Req() request: Request
+  ) {
+    const result = await this.authService.logout(request);
+
+    // set lại thời gian hết hạn cho 2 token
+    response.cookie('access_token', '', {
+      httpOnly: true,
+      secure: true, // Chỉ chạy qua HTTPS (khi deploy thực tế)
+      sameSite: 'lax',
+      path: '/', // Có mặt trên mọi API
+      maxAge: 0, // TTL: 15 phút (tính bằng mili-giây)
+    });
+
+    // 2. Cất Refresh Token vào Cookie (Chỉ API refresh mới được cõng theo nhờ path: '/admin/auth/refresh')
+    response.cookie('refresh_token', '', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/admin/auth',
+      maxAge: 0, // TTL: 30 ngày
+    });
+
+    return {
+      message: 'Đăng xuất thành công'
     }
   }
 }
