@@ -2,11 +2,14 @@ import {
   Controller,
   Post,
   Body,
-  Res
+  Res,
+  Req
 } from '@nestjs/common';
+import type { ExecutionContext } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.auth.dto';
 import express from 'express';
+import type { Request } from 'express'
 
 @Controller('admin/auth')
 export class AuthController {
@@ -39,6 +42,26 @@ export class AuthController {
 
     return {
       message: 'Đăng nhập thành công'
+    }
+  }
+
+  @Post('refresh')
+  async refreshToken(
+    @Res({ passthrough: true }) response: express.Response,
+    @Req() request: Request
+  ) {
+    const result = await this.authService.refreshToken(request);
+
+    response.cookie('access_token', result.accessToken, {
+      httpOnly: true,
+      secure: true, // Chỉ chạy qua HTTPS (khi deploy thực tế)
+      sameSite: 'lax',
+      path: '/', // Có mặt trên mọi API
+      maxAge: 15 * 60 * 1000, // TTL: 15 phút (tính bằng mili-giây)
+    })
+
+    return {
+      message: 'Cấp lại access token thành công'
     }
   }
 }

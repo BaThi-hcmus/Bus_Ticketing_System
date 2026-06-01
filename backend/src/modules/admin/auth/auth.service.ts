@@ -2,7 +2,8 @@ import {
     Injectable, // dùng khi 1 class hoặc 1 interface muốn được inject ở 1 nơi khác
     UnauthorizedException, // lỗi xác thực (authen)
     ConflictException, // Lỗi xung đột
-    Inject
+    Inject,
+    ExecutionContext
 } from '@nestjs/common';
 import { LoginDto } from './dto/login.auth.dto';
 import * as argon2 from 'argon2'
@@ -25,6 +26,9 @@ import type { Cache } from 'cache-manager';
 
 // Thư viện crypto dùng sinh số ngẫu nhiên
 import * as crypto from 'crypto';
+
+// Lấy ra cookie 
+import { Request } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -99,7 +103,7 @@ export class AuthService {
         }
 
         //tạo access token với TTL là 15 phút
-        const accessToken = this.jwtService.sign(accessTokenPayload, { expiresIn: '3m' });
+        const accessToken = this.jwtService.sign(accessTokenPayload, { expiresIn: '15m' });
 
         //tạo refresh token bằng chuỗi random, độ lớn 40 bytes, tức là gồm 80 kí tự trong hệ thập lục phân
         const refreshToken = crypto.randomBytes(40).toString('hex');
@@ -113,6 +117,56 @@ export class AuthService {
 
         return {
             refreshToken,
+            accessToken
+        }
+    }
+
+    async refreshToken(request: Request): Promise<any> {
+        // bóc tách token ra
+        const refreshToken = request.cookies['refresh_token'];
+
+        // Nếu refresh token đã hết hạn lưu trong cookie
+        if (!refreshToken) {
+            throw new UnauthorizedException('Refresh token đã hết hạn, vui lòng đăng nhập lại');
+        }
+
+        // Truy vấn trong redis
+        const redisRefreshToken = await this.cacheManager.get(`refresh_token:${refreshToken}`);
+        if (!redisRefreshToken) {
+            // Khi refresh token hết hạn thì user phải đăng nhập lại
+            throw new UnauthorizedException('Refresh token đã hết hạn, vui lòng đăng nhập lại');
+        }
+
+        // Cấp cho user 1 access_token mới (guard sẽ tự nạp lại vào redis trong lần gọi api tiếp theo)
+        // Lúc này redisRefreshToken là id user => truy vấn vào sql server để lấy thông tin
+        const user = await this.userRepo.findOne({
+            where: {
+                id: Number(redisRefreshToken),
+                deleted: false
+            },
+            relations: [
+                'userRoles',
+                'userRoles.role'
+            ]
+        })
+
+        if (!user) {
+            throw new UnauthorizedException('User không tồn tại hoặc đã bị xóa trong database');
+        }
+
+        // Chuẩn bị payload để tạo access token
+        const roles = user.userRoles.map(item => item.role?.name).filter(Boolean);
+        const payload = {
+            sub: user.id,
+            email: user.email,
+            roles: roles,
+            fullName: user.fullName,
+            phoneNumber: user.phoneNumber,
+            avatar: user.avatar
+        }
+        const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+
+        return {
             accessToken
         }
     }
