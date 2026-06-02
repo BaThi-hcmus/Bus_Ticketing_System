@@ -4,7 +4,8 @@ import {
     PrimaryGeneratedColumn,
     ManyToOne,
     JoinColumn,
-    OneToOne
+    OneToOne,
+    OneToMany
 } from 'typeorm'
 import { Trip } from './trip.entity';
 import { BookingDetail } from './bookingDetail.entity';
@@ -12,19 +13,22 @@ import { BookingDetail } from './bookingDetail.entity';
 @Entity('Seats')
 export class Seat {
     @PrimaryGeneratedColumn()
-    id: string;
+    id: number;
+
+    @Column({name: 'trip_id'})
+    tripId: number;
 
     //khóa ngoại tới Trip
     @ManyToOne(() => Trip, (trip) => trip.seats)
     @JoinColumn({ name: 'trip_id' })
     trip: Trip;
 
-    @Column({ type: 'nvarchar', length: 50 })
-    seatNumber: number;
+    @Column({ type: 'nvarchar', length: 50, name: 'seat_number' })
+    seatNumber: string;
 
-    @Column({ default: true })
+    @Column({ default: true, name: 'is_available' })
     isAvailable: boolean;
 
-    @OneToOne(() => BookingDetail, (bookingDetail) => bookingDetail.seat)
-    bookingDetail: BookingDetail;
+    @OneToMany(() => BookingDetail, (bookingDetail) => bookingDetail.seat)
+    bookingDetails: BookingDetail[];
 }

@@ -19,19 +19,19 @@ export class Bus {
     @PrimaryGeneratedColumn()   // khai báo khóa chính và tự động tăng
     id: number;
 
-    @Column({ type: 'nvarchar', length: 20, unique: true })
+    @Column({ type: 'nvarchar', length: 20, unique: true, name: 'license_plate' })
     licensePlate: string;
 
     @Column({type: 'nvarchar'})
     type: string;
 
-    @Column({ type: 'int' })
+    @Column({ type: 'int', name: 'total_seats' })
     totalSeats: number;
 
     @Column({ type: 'nvarchar', length: 50 })
     model: string;
 
-    @CreateDateColumn({ type: 'datetime2' })
+    @CreateDateColumn({ type: 'datetime2', name: 'created_at' })
     createdAt: Date;
 
     @Column({ default: false })

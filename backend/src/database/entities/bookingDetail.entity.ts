@@ -4,7 +4,8 @@ import {
     PrimaryGeneratedColumn,
     ManyToOne,
     JoinColumn,
-    OneToOne
+    OneToOne,
+    OneToMany
 } from 'typeorm'
 import { Booking } from './booking.entity';
 import { Seat } from './seat.entity';
@@ -14,11 +15,21 @@ export class BookingDetail {
     @PrimaryGeneratedColumn()
     id: number;
 
+    @Column({name: 'booking_id'})
+    bookingId: number;
+
     @ManyToOne(() => Booking, (booking) => booking.bookingDetails)
     @JoinColumn({ name: 'booking_id' })
     booking: Booking;
 
-    @OneToOne(() => Seat, (seat) => seat.bookingDetail)
+    @Column({name: 'seat_id'})
+    seatId: number;
+
+    @ManyToOne(() => Seat, (seat) => seat.bookingDetails)
     @JoinColumn({ name: 'seat_id' })
     seat: Seat;
+
+    // 🌟 THÀNH PHẦN MỚI: Giá vé thực tế tại thời điểm đặt (Bảo vệ tính đóng băng dữ liệu lịch sử)
+    @Column({ type: 'int', default: 0 })
+    price: number;
 }

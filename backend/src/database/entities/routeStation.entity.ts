@@ -13,23 +13,23 @@ export class RouteStation {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
+    @Column({name: 'route_id'})
     routeId: number;
 
-    @Column()
+    @Column({name: 'station_id'})
     stationId: number;
 
-    @Column()
+    @Column({name: 'stop_order'})
     stopOrder: number; // 1: Trạm đầu, 2: Trạm giữa, 3: Trạm cuối...
 
-    @Column({ type: 'float', nullable: true })
+    @Column({ type: 'float', nullable: true, name: 'distance_from_start' })
     distanceFromStart: number; // Khoảng cách từ trạm gốc (để tính tiền vé)
 
     @ManyToOne(() => Route, (route) => route.routeStations, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'routeId' })
+    @JoinColumn({ name: 'route_id' })
     route: Route;
 
     @ManyToOne(() => Station, (station) => station.routeStations, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'stationId' })
+    @JoinColumn({ name: 'station_id' })
     station: Station;
 }

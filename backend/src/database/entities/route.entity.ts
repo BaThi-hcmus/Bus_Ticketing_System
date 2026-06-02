@@ -25,25 +25,25 @@ export class Route {
     @Column({ type: 'nvarchar', length: 255 })
     name: string;
 
-    @Column({ type: 'int' })
+    @Column({ type: 'int', name: 'departure_station_id' })
     departureStationId: number;
 
-    @Column({ type: 'int' })
+    @Column({ type: 'int', name: 'destination_station_id' })
     destinationStationId: number;
 
     // 🌟 Thay vì lưu String, hãy liên kết trực tiếp tới Trạm Đầu và Trạm Cuối
     @ManyToOne(() => Station)
-    @JoinColumn({ name: 'departureStationId' })
+    @JoinColumn({ name: 'departure_station_id' })
     departureStation: Station;
 
     @ManyToOne(() => Station)
-    @JoinColumn({ name: 'destinationStationId' })
+    @JoinColumn({ name: 'destination_station_id' })
     destinationStation: Station;
 
-    @Column({ type: 'int' }) // Khoảng cách tính bằng Km 
+    @Column({ type: 'int', name: 'distance_km' }) // Khoảng cách tính bằng Km 
     distanceKm: number;
 
-    @Column({ type: 'int' }) // 🌟 Quy ước: Thời gian di chuyển dự kiến tính bằng PHÚT
+    @Column({ type: 'int', name: 'estimated_duration_min' }) // 🌟 Quy ước: Thời gian di chuyển dự kiến tính bằng PHÚT
     estimatedDurationMin: number;
 
     @Column({
@@ -57,13 +57,13 @@ export class Route {
     @Column({ default: false })
     deleted: boolean;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', nullable: true, name: 'route_geometry' })
     routeGeometry: string;
 
     @Column({ type: 'text', nullable: true })
     waypoints: string;
 
-    @CreateDateColumn({ type: 'datetime2' }) // 🌟 Lưu đầy đủ ngày giờ phút giây chính xác
+    @CreateDateColumn({ type: 'datetime2', name: 'created_at' }) // 🌟 Lưu đầy đủ ngày giờ phút giây chính xác
     createdAt: Date;
 
     @OneToMany(() => Trip, (trip) => trip.route)

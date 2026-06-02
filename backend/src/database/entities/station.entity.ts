@@ -33,7 +33,7 @@ export class Station {
     @Column({ type: 'float', nullable: true })
     lng: number;
 
-    @CreateDateColumn({ type: 'datetime2' })
+    @CreateDateColumn({ type: 'datetime2', name: 'created_at' })
     createdAt: Date;
 
     @OneToMany(() => RouteStation, (routeStation) => routeStation.station)
