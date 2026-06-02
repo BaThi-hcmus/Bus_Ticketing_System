@@ -2,6 +2,7 @@ import {
     Injectable, // dùng khi 1 class hoặc 1 interface muốn được inject ở 1 nơi khác
     UnauthorizedException, // lỗi xác thực (authen)
     Inject,
+    NotFoundException,
 } from '@nestjs/common';
 import { LoginDto } from './dto/login.auth.dto';
 import * as argon2 from 'argon2'
@@ -88,6 +89,37 @@ export class AuthService {
             // xóa trong redis
             const redisKey = `session_id:${sessionId}`;
             await this.cacheManager.del(redisKey);
+        }
+    }
+
+    async getProfile(request: Request): Promise<any> {
+        const id = request['user'].id;
+
+        const user = await this.userRepo.findOne({
+            where: {
+                id: id,
+                deleted: false 
+            },
+            relations: [
+                'userRoles',
+                'userRoles.role'
+            ]
+        })
+
+        if (user) {
+            const roles: string[] = [];
+            user?.userRoles.forEach(userRole => {
+                roles.push(userRole?.role.name);
+            })
+            user['roles'] = roles;
+            // gắn permissions
+            user['permissions'] = request['user'].permissions;
+            // Loại bỏ password
+            const {password, userRoles, ...userExceptPassword} = user as any;
+
+            return userExceptPassword;
+        } else {
+            throw new NotFoundException('Không tìm thấy user');
         }
     }
 }

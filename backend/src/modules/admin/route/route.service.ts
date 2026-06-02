@@ -30,10 +30,10 @@ export class RouteService {
         const paginationObject = await this.pagination.pagination(page, whereCondition, this.routeRepo);
 
         const sortList = [
-            { name: "Điểm đi (A-Z)", type: "departureLocation-src" },
-            { name: "Điểm đi (Z-A)", type: "departureLocation-desc" },
-            { name: "Điểm đến (A-Z)", type: "destinationLocation-src" },
-            { name: "Điểm đến (Z-A)", type: "destinationLocation-desc" },
+            { name: "Điểm đi (A-Z)", type: "departureLocation.name-src" },
+            { name: "Điểm đi (Z-A)", type: "departureLocation.name-desc" },
+            { name: "Điểm đến (A-Z)", type: "destinationLocation.name-src" },
+            { name: "Điểm đến (Z-A)", type: "destinationLocation.name-desc" },
             { name: "Khoảng cách tăng dần", type: "distanceKm-src" },
             { name: "Khoảng cách giảm dần", type: "distanceKm-desc" },
             { name: "Thời gian tạo tăng dần", type: "createdAt-src" },
@@ -46,7 +46,12 @@ export class RouteService {
             order: orderCondition,
             skip: paginationObject.startIndex,
             take: paginationObject.itemPerPage,
-            relations: ['routeStations', 'routeStations.station'] // Lấy kèm thông tin trạm để đếm số trạm hiển thị UI
+            relations: [
+                'routeStations', 
+                'routeStations.station', // Lấy kèm thông tin trạm để đếm số trạm hiển thị UI
+                'departureStation', // 🌟 BẮT BUỘC PHẢI THÊM ĐỂ SORT ĐIỂM ĐI
+                'destinationStation' // 🌟 BẮT BUỘC PHẢI THÊM ĐỂ SORT ĐIỂM ĐẾN 
+            ] 
         });
 
         return {
@@ -60,16 +65,16 @@ export class RouteService {
     }
 
     // So sánh mảng trạm đầu vào với mảng trạm của một tuyến đường có sẵn
-    private isStationsIdentical(existingStations: RouteStation[], inputStations: any[]): boolean {
-        if (!existingStations || !inputStations || existingStations.length != inputStations.length) return false;
+    private isStationsIdentical(existingStations: RouteStation[], inputStationIds: number[]): boolean {
+        if (!existingStations || !inputStationIds || existingStations.length != inputStationIds.length) return false;
 
         // sắp xếp lại theo thứ tự
         const sortedExisting = [...existingStations].sort((a, b) => a.stopOrder - b.stopOrder);
 
         // Thêm stopOrder cho mảng input 
-        const sortedInput = [...inputStations].map((s, index) => {
+        const sortedInput = [...inputStationIds].map((s, index) => {
             return {
-                ...s,
+                stationId: s,
                 stopOrder: index + 1
             }
         })
@@ -87,16 +92,18 @@ export class RouteService {
         const possibleDuplicateRoutes = await this.routeRepo.find({
             where: {
                 deleted: false,
-                departureLocation: createRouteDto.departureLocation,
-                destinationLocation: createRouteDto.destinationLocation
+                departureStationId: Number(createRouteDto.departureStationId),
+                destinationStationId: Number(createRouteDto.destinationStationId)
             },
-            relations: ['routeStations']
+            relations: [
+                'routeStations'
+            ]
         })
 
         //Nếu người dùng có nhập station thì kiểm tra trùng 
-        if (createRouteDto.stations && createRouteDto.stations.length > 0) {
+        if (createRouteDto.stationIds && createRouteDto.stationIds.length > 0) {
             for (const route of possibleDuplicateRoutes) {
-                if (this.isStationsIdentical(route.routeStations, createRouteDto.stations)) {
+                if (this.isStationsIdentical(route.routeStations, createRouteDto.stationIds)) {
                     throw new ConflictException('Tuyến đường bạn vừa nhập đã tồn tại trong hệ thống');
                 }
             }
@@ -105,10 +112,10 @@ export class RouteService {
         // Nếu không trùng thì thực hiện thêm vào DB
         // Thêm route
         const newRoute = this.routeRepo.create({
-            departureLocation: createRouteDto.departureLocation,
-            destinationLocation: createRouteDto.destinationLocation,
+            departureStationId: createRouteDto.departureStationId,
+            destinationStationId: createRouteDto.destinationStationId,
             distanceKm: createRouteDto.distanceKm,
-            estimatedDuration: createRouteDto.estimatedDuration,
+            estimatedDurationMin: createRouteDto.estimatedDurationMin,
             routeGeometry: createRouteDto.routeGeometry,
             waypoints: createRouteDto.waypoints
         })
@@ -116,13 +123,14 @@ export class RouteService {
         const savedRoute = await this.routeRepo.save(newRoute);
 
         //Thêm các routeStations
-        if (createRouteDto.stations && createRouteDto.stations.length > 0) {
-            const newRouteStations = [...createRouteDto.stations].map((s, index) => {
+        if (createRouteDto.stationIds && createRouteDto.stationIds.length > 0) {
+            const newRouteStations = [...createRouteDto.stationIds].map((stationId, index) => {
+                // gọi api tính khoảng cách 2 điểm để lưu cho biến distanceFromStart
                 return this.routeStationRepo.create({
                     routeId: savedRoute.id,
-                    stationId: s.stationId,
+                    stationId: stationId,
                     stopOrder: index + 1,
-                    distanceFromStart: s.distanceFromStart
+                    distanceFromStart: 100
                 })
             })
 
@@ -142,22 +150,19 @@ export class RouteService {
         }
 
         //Xác định các giá trị mới hoặc giữ nguyên giá trị không cập nhật
-        const newDeparture = editRouteDto.departureLocation || route.departureLocation;
-        const newDestination = editRouteDto.destinationLocation || route.destinationLocation;
+        const newDepartureStationId = editRouteDto.departureStationId || route.departureStationId;
+        const newDestinationStationId = editRouteDto.destinationStationId || route.destinationStationId;
 
         // Nếu client không truyền stations mới, lấy stations hiện tại của tuyến đường
-        const stationsToCheck = editRouteDto.stations || route.routeStations.map(rs => ({
-            stationId: rs.stationId,
-            distanceFromStart: rs.distanceFromStart
-        }));
+        const stationIdsToCheck = editRouteDto.stationIds || route.routeStations.map(rs => rs.stationId);
 
         // Lấy ra danh sách các tuyến đường trùng điểm đầu và điểm cuối nhưng khác id để kiểm tra
         const possibleDuplicateRoutes = await this.routeRepo.find({
             where: {
                 id: Not(id),
                 deleted: false,
-                departureLocation: newDeparture,
-                destinationLocation: newDestination
+                departureStationId: newDepartureStationId,
+                destinationStationId: newDestinationStationId
             },
             relations: ['routeStations']
         })
@@ -165,7 +170,7 @@ export class RouteService {
         //Kiểm tra trùng 
         if (possibleDuplicateRoutes && possibleDuplicateRoutes.length > 0) {
             for (const route of possibleDuplicateRoutes) {
-                if (this.isStationsIdentical(route.routeStations, stationsToCheck as any[])) {
+                if (this.isStationsIdentical(route.routeStations, stationIdsToCheck)) {
                     throw new ConflictException('Tuyến đường sau khi chỉnh sửa trùng khớp với một tuyến khác đã tồn tại!');
                 }
             }
@@ -173,25 +178,24 @@ export class RouteService {
 
         //Nếu không trùng thì tiến hành cập nhật
         //Cập nhật Route
-        const editData = { ...editRouteDto };
-        delete editData.stations; //Xóa station khi update cho Route
+        const {stationIds, ...updateData} = editRouteDto;
 
-        if (Object.keys(editData).length > 0) {
-            await this.routeRepo.update({ id: id }, editData);
+        if (Object.keys(updateData).length > 0) {
+            await this.routeRepo.update({ id: id }, updateData);
         }
 
         //Cập nhật routeStations
-        if (editRouteDto.stations) {
+        if (stationIds) {
             //xóa stations cũ
             await this.routeStationRepo.delete({ routeId: id });
 
             // Thêm stations mới 
-            if (editRouteDto.stations.length > 0) {
-                const newRouteStations = [...editRouteDto.stations].map((s, index) => {
+            if (stationIds.length > 0) {
+                const newRouteStations = [...stationIds].map((stationId, index) => {
                     return this.routeStationRepo.create({
                         routeId: id,
-                        stationId: s.stationId,
-                        distanceFromStart: s.distanceFromStart,
+                        stationId: stationId,
+                        distanceFromStart: 100, //tạm thời hardcode, sau này gọi api để tính
                         stopOrder: index + 1
                     })
                 })
@@ -201,13 +205,20 @@ export class RouteService {
         }
     }
 
+
     async getRouteDetail(id: number): Promise<any> {
         const route = await this.routeRepo.findOne({
             where: {
                 id: id,
                 deleted: false
             },
-            relations: ['trips', 'routeStations', 'routeStations.station']
+            relations: [
+                'trips', 
+                'routeStations', 
+                'routeStations.station',
+                'depatureStation',
+                'destinationStation'
+            ]
         })
 
         if (!route) {

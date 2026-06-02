@@ -14,9 +14,6 @@ export class CreateBusDto {
 
     @IsNotEmpty({ message: 'Loại xe không được để trống' })
     @IsString({ message: 'Loại xe phải là chuỗi ký tự' })
-    @IsIn(['Giường nằm', 'Ghế ngồi', 'Limousine'], {
-        message: 'Loại xe phải thuộc: "Giường nằm", "Ghế ngồi", "Limousine"',
-    })
     type: string;
 
     @IsInt({ message: 'Tổng số ghế phải là số nguyên dương' })

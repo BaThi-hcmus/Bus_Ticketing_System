@@ -6,18 +6,22 @@ import {
     IsOptional,
     Min,
     ValidateNested,
+    IsInt,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { RouteStationItemDto } from './route-station-item.dto';
 
 export class CreateRouteDto {
-    @IsNotEmpty({ message: 'Điểm đi không được để trống' })
-    @IsString({ message: 'Điểm đi phải là chuỗi ký tự' })
-    departureLocation: string;
+    @IsNotEmpty({message: 'Tên tuyến đường không được để trống'})
+    @IsString({message: 'Tên tuyến đường phải là chuỗi kí tự'})
+    name: string;
 
-    @IsNotEmpty({ message: 'Điểm đến không được để trống' })
-    @IsString({ message: 'Điểm đến phải là chuỗi ký tự' })
-    destinationLocation: string;
+    @IsNotEmpty({ message: 'Id điểm đi không được để trống' })
+    @IsInt({ message: 'Id điểm đi phải là số nguyên' })
+    departureStationId: number;
+
+    @IsNotEmpty({ message: 'Id điểm đến không được để trống' })
+    @IsInt({ message: 'Id điểm đến phải là chuỗi ký tự' })
+    destinationStationId: number;
 
     @IsNumber({}, { message: 'Khoảng cách phải là số' })
     @Min(0, { message: 'Khoảng cách không được âm' })
@@ -25,13 +29,12 @@ export class CreateRouteDto {
 
     @IsNumber({}, { message: 'Thời gian dự kiến phải là số' })
     @Min(0, { message: 'Thời gian dự kiến không được âm' })
-    estimatedDuration: number;
+    estimatedDurationMin: number;
 
     @IsOptional()
     @IsArray({ message: 'Danh sách trạm phải là mảng' })
-    @ValidateNested({ each: true })
-    @Type(() => RouteStationItemDto)
-    stations?: RouteStationItemDto[];
+    @IsInt({ each: true, message: 'Id trạm dừng phải là số nguyên'})
+    stationIds?: number[];
 
     @IsOptional()
     @IsString({ message: 'routeGeometry phải là chuỗi' })

@@ -7,6 +7,7 @@ import {
     Min,
     Max,
 } from 'class-validator';
+import { BusStatus } from 'src/database/entities/bus.entity';
 
 export class EditBusDto {
     @IsOptional()
@@ -15,9 +16,6 @@ export class EditBusDto {
 
     @IsOptional()
     @IsString({ message: 'Loại xe phải là chuỗi ký tự' })
-    @IsIn(['Giường nằm', 'Ghế ngồi', 'Limousine'], {
-        message: 'Loại xe phải thuộc: "Giường nằm", "Ghế ngồi", "Limousine"',
-    })
     type?: string;
 
     @IsOptional()
@@ -31,8 +29,8 @@ export class EditBusDto {
     model?: string;
 
     @IsOptional()
-    @IsIn(['active', 'inactive'], { message: 'Trạng thái phải là active hoặc inactive' })
-    status?: string;
+    @IsString({message: 'Trạng thái phải là chuỗi kí tự'})
+    status?: BusStatus;
 
     @IsOptional()
     @IsBoolean({ message: 'deleted phải là boolean' })

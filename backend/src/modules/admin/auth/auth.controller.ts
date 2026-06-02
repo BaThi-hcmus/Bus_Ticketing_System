@@ -3,13 +3,16 @@ import {
   Post,
   Body,
   Res,
-  Req
+  Req,
+  Get,
+  UseGuards
 } from '@nestjs/common';
 import type { ExecutionContext } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.auth.dto';
 import express from 'express';
 import type { Request } from 'express'
+import { PermissionGuard } from 'src/common/guard/permission.guard';
 
 @Controller('admin/auth')
 export class AuthController {
@@ -54,6 +57,18 @@ export class AuthController {
 
     return {
       message: 'Đăng xuất thành công'
+    }
+  }
+
+
+  @Get('profile')
+  @UseGuards(PermissionGuard)
+  async getProfile(@Req() request: Request) {
+    const result = await this.authService.getProfile(request);
+
+    return {
+      data: result,
+      message: 'Lấy thông tin user thành công'
     }
   }
 }

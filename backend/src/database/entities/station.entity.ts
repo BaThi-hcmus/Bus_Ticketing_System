@@ -6,16 +6,17 @@ import {
     OneToMany
 } from 'typeorm'
 import { RouteStation } from './routeStation.entity';
+import { Route } from './route.entity';
 
 @Entity('Stations')
 export class Station {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
+    @Column({ type: 'nvarchar', length: 255})
     name: string;
 
-    @Column()
+    @Column({ type: 'nvarchar', length: 500})
     address: string;
 
     @Column({ default: false })
@@ -32,9 +33,15 @@ export class Station {
     @Column({ type: 'float', nullable: true })
     lng: number;
 
-    @CreateDateColumn({ type: 'date' })
+    @CreateDateColumn({ type: 'datetime2' })
     createdAt: Date;
 
     @OneToMany(() => RouteStation, (routeStation) => routeStation.station)
     routeStations: RouteStation[];
+
+    @OneToMany(() => Route, (route) => route.departureStation)
+    departureRoutes: Route[]; // Danh sách các tuyến lấy trạm này làm điểm xuất phát
+
+    @OneToMany(() => Route, (route) => route.destinationStation)
+    destinationRoutes: Route[]; // Danh sách các tuyến lấy trạm này làm điểm kết thúc
 }

@@ -31,9 +31,7 @@ export class PermissionGuard implements CanActivate {
             context.getHandler()
         )
         //Nếu API không yêu cầu quyền thì cho qua
-        if (!requiredPermission) {
-            return true;
-        }
+        const hasMetadata: boolean = requiredPermission ? true : false;
 
         // Lấy đối tượng Request của Express ra
         const request = context.switchToHttp().getRequest<Request>();
@@ -94,16 +92,21 @@ export class PermissionGuard implements CanActivate {
             throw new ForbiddenException(`Lỗi không tìm thấy người dùng có ID là: ${userId}`);
         }
 
-        // Kiểm tra quyền
-        if (!permissions.includes(requiredPermission)) {
-            throw new ForbiddenException('Bạn không có quyền truy cập vào API này');
-        }
-
-        // Gắn thông tin user vào request
-        request['user'] = {
+         // Gắn thông tin user vào request
+         request['user'] = {
             id: user.id,
             email: user.email,
             permissions: permissions
+        }
+
+        // Nếu api không yêu cầu permission thì cho qua luôn, không yêu cầu xác thực
+        if (!hasMetadata) {
+            return true;
+        }
+
+        // Kiểm tra quyền
+        if (!permissions.includes(requiredPermission)) {
+            throw new ForbiddenException('Bạn không có quyền truy cập vào API này');
         }
 
         return true;

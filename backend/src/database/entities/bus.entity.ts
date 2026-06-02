@@ -7,6 +7,13 @@ import {
 } from 'typeorm'
 import { Trip } from './trip.entity';
 
+export enum BusStatus {
+    ACTIVE = 'active',
+    MAINTENANCE = 'maintenance',
+    ON_TRIP = 'on_trip',
+    INACTIVE = 'inactive',
+  }
+
 @Entity('Buses')
 export class Bus {
     @PrimaryGeneratedColumn()   // khai báo khóa chính và tự động tăng
@@ -15,22 +22,27 @@ export class Bus {
     @Column({ type: 'nvarchar', length: 20, unique: true })
     licensePlate: string;
 
-    @Column({ type: 'nvarchar', length: 50 })
+    @Column({type: 'nvarchar'})
     type: string;
 
-    @Column({ type: 'decimal' })
+    @Column({ type: 'int' })
     totalSeats: number;
 
     @Column({ type: 'nvarchar', length: 50 })
     model: string;
 
-    @CreateDateColumn({ type: 'date' })
+    @CreateDateColumn({ type: 'datetime2' })
     createdAt: Date;
 
     @Column({ default: false })
     deleted: boolean;
 
-    @Column({ default: "active" })
+    @Column({ 
+        type: 'nvarchar', 
+        length: 50,
+        enum: BusStatus,
+        default: BusStatus.ACTIVE
+    })
     status: string;
 
     @OneToMany(() => Trip, (trip) => trip.bus)

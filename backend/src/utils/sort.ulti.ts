@@ -1,39 +1,48 @@
-import { ConflictException, Injectable } from "@nestjs/common";
+import { ConflictException } from '@nestjs/common';
 
-@Injectable()
 export class Sort {
-    sort = (sortType: string, sortList: any[]) => {
-        // Mặc định sắp xếp theo thời gian tạo mới nhất nếu không truyền sortType
+    sort = (sortType: string, sortList: any[]): any => {
+        // 1. Mặc định sắp xếp theo thời gian tạo mới nhất nếu không truyền sortType
         if (!sortType) {
             return { createdAt: "DESC", id: "DESC" };
         }
 
-        // Lấy ra các field hợp lệ từ item.type 
-        const fields: string[] = [];
-        sortList.forEach((item) => {
-            fields.push(item.type.split("-")[0]);
-        });
+        // 2. Lấy ra danh sách các path hợp lệ được phép sort (Ví dụ: ['departureStation.name', 'distanceKm'])
+        const validPaths = sortList.map(item => item.type.split("-")[0]);
 
         const arr = sortType.split("-");
-        const field = arr[0];
-        const directionRaw = arr[1];
+        const rawPath = arr[0];        // Ví dụ: 'departureStation.name' hoặc 'distanceKm'
+        const directionRaw = arr[1];   // 'src' hoặc 'desc'
 
-        // Nếu trường sắp xếp không nằm trong các trường cho phép
-        if (!fields.includes(field)) {
+        // 3. Kiểm tra tính hợp lệ của tiêu chí sort
+        if (!validPaths.includes(rawPath)) {
             throw new ConflictException('Tiêu chí sort không hợp lệ');
         }
 
-        // Ánh xạ hướng sắp xếp chuẩn SQL (TypeORM chỉ hiểu ASC hoặc DESC)
-        // src -> ASC, desc/dest -> DESC
-        let direction: "ASC" | "DESC" = "ASC";
-        if (directionRaw === "desc") {
-            direction = "DESC";
-        }
+        // 4. Ánh xạ hướng sắp xếp
+        const direction: "ASC" | "DESC" = directionRaw === "desc" ? "DESC" : "ASC";
 
         const sortObject: any = {};
-        sortObject[field] = direction;
-        // Thêm id làm tiebreaker để đảm bảo thứ tự ổn định cho phân trang
-        if (field !== 'id') {
+
+        // 🌟 5. LOGIC ĐỈNH CAO: Biến chuỗi "a.b.c" thành Object lồng nhau { a: { b: { c: direction } } }
+        const fields = rawPath.split('.'); // Nếu là 'departureStation.name' -> ['departureStation', 'name']
+        
+        let currentLevel = sortObject;
+        for (let i = 0; i < fields.length; i++) {
+            const field = fields[i];
+            if (i === fields.length - 1) {
+                // Nếu đã đi đến tầng cuối cùng (ví dụ: 'name'), gán hướng sort vào
+                currentLevel[field] = direction;
+            } else {
+                // Nếu chưa phải tầng cuối, tạo một Object rỗng lồng vào và dịch chuyển con trỏ đi xuống
+                currentLevel[field] = {};
+                currentLevel = currentLevel[field];
+            }
+        }
+
+        // 6. Thêm id làm tiebreaker để đảm bảo thứ tự ổn định khi phân trang
+        // Chỉ thêm nếu tầng ngoài cùng không phải là trường id
+        if (fields[0] !== 'id') {
             sortObject['id'] = direction;
         }
 

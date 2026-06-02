@@ -33,6 +33,7 @@ import { CategoryPermissionModule } from './modules/admin/category-permission/ca
         database: configService.get<string>('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'], // đường dẫn tới các file entity định nghĩa schema
         synchronize: true, // Tự động tạo bảng dựa trên code Entity (Chỉ dùng khi Dev)
+        dropSchema: true,
         extra: {
           trustServerCertificate: true, // Quan trọng để tránh lỗi SSL trên Local
         },
