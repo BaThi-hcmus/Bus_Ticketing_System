@@ -9,6 +9,7 @@ import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
 import { ConfigModule } from '@nestjs/config';
+import { BusStatus } from 'src/database/entities/bus.entity';
 
 @Injectable()
 export class BusService {
@@ -27,7 +28,34 @@ export class BusService {
         }
 
         //filter
-        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition);
+        const filterStatusList = [
+            {
+                name: "Tấc cả",
+                status: "",
+                class: "active"
+            },
+            {
+                name: "Hoạt động",
+                status: BusStatus.ACTIVE,
+                class: ""
+            },
+            {
+                name: "Dừng hoạt động",
+                status: BusStatus.INACTIVE,
+                class: ""
+            },
+            {
+                name: "Bảo trì",
+                status: BusStatus.MAINTENANCE,
+                class: ""
+            },
+            {
+                name: "Đang khởi hành",
+                status: BusStatus.ON_TRIP,
+                class: ""
+            }
+        ]
+        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition, filterStatusList);
 
         //search
         const { searchResult, whereCondition } = this.search.search(

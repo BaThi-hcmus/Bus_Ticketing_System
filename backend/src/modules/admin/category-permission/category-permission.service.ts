@@ -8,6 +8,7 @@ import { FilterStatus } from '../../../utils/filterStatus.util';
 import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
+import { CategoryPermissionStatus } from 'src/database/entities/categoryPermission.entity';
 
 @Injectable()
 export class CategoryPermissionService {
@@ -23,7 +24,24 @@ export class CategoryPermissionService {
         const queryCondition = { deleted: false };
 
         //filter
-        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition);
+        const filterStatusList = [
+            {
+                name: "Tấc cả",
+                status: "",
+                class: "active"
+            },
+            {
+                name: "Hoạt động",
+                status: CategoryPermissionStatus.ACTIVE,
+                class: ""
+            },
+            {
+                name: "Dừng hoạt động",
+                status: CategoryPermissionStatus.INACTIVE,
+                class: ""
+            }
+        ]
+        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition, filterStatusList);
 
         //search
         const { searchResult, whereCondition } = this.search.search(

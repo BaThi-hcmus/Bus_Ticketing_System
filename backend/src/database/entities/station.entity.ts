@@ -8,6 +8,11 @@ import {
 import { RouteStation } from './routeStation.entity';
 import { Route } from './route.entity';
 
+export enum StationStatus {
+    ACTIVE = 'active',
+    INACTIVE = 'inactive',
+  }
+
 @Entity('Stations')
 export class Station {
     @PrimaryGeneratedColumn()
@@ -22,7 +27,11 @@ export class Station {
     @Column({ default: false })
     deleted: boolean;
 
-    @Column({ default: 'active' })
+    @Column({ 
+        type: 'nvarchar',
+        length: 50,
+        default: StationStatus.ACTIVE
+    })
     status: string;
 
     // Tọa độ Vĩ độ (Latitude)

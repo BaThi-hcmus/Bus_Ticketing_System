@@ -9,6 +9,11 @@ import {
 import { RolePermission } from './rolePermissions.entity';
 import { UserRole } from './userRole.entity';
 
+export enum RoleStatus {
+    ACTIVE = 'active',
+    INACTIVE = 'inactive',
+  }
+
 @Entity('Roles')
 export class Role {
     @PrimaryGeneratedColumn()
@@ -20,7 +25,11 @@ export class Role {
     @Column({ default: false })
     deleted: boolean;
 
-    @Column({ default: 'active' })
+    @Column({ 
+        type: 'nvarchar',
+        length: 50,
+        default: RoleStatus.ACTIVE
+    })
     status: string;
 
     @CreateDateColumn({ type: 'date' })

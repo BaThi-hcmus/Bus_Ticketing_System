@@ -7,6 +7,11 @@ import {
 } from 'typeorm'
 import { Permission } from './permission.entity';
 
+export enum CategoryPermissionStatus {
+    ACTIVE = 'active',
+    INACTIVE = 'inactive',
+  }
+
 @Entity('CategoryPermission')
 export class CategoryPermission {
     @PrimaryGeneratedColumn()   // khai báo khóa chính và tự động tăng
@@ -21,7 +26,11 @@ export class CategoryPermission {
     @Column({ default: false })
     deleted: boolean;
 
-    @Column({ default: "active" })
+    @Column({ 
+        type: 'nvarchar',
+        length: 50,
+        default: CategoryPermissionStatus.ACTIVE
+    })
     status: string;
 
     @OneToMany(() => Permission, (permission) => permission.categoryPermission)

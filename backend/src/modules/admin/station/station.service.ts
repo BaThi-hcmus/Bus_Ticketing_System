@@ -10,6 +10,8 @@ import { Pagination } from '../../../utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
 import { Haversine } from 'src/utils/haversine.util';
 import { GeocodingUtil } from 'src/utils/geocoding.util';
+import { StationStatus } from 'src/database/entities/station.entity';
+import { filter } from 'rxjs';
 
 @Injectable()
 export class StationService implements OnModuleInit {
@@ -53,7 +55,25 @@ export class StationService implements OnModuleInit {
             deleted: false,
         };
 
-        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition);
+        // filter
+        const filterStatusList = [
+            {
+                name: "Tấc cả",
+                status: "",
+                class: "active"
+            },
+            {
+                name: "Hoạt động",
+                status: StationStatus.ACTIVE,
+                class: ""
+            },
+            {
+                name: "Dừng hoạt động",
+                status: StationStatus.INACTIVE,
+                class: ""
+            }
+        ]
+        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition, filterStatusList);
 
         const { searchResult, whereCondition } = this.search.search(
             keyword,

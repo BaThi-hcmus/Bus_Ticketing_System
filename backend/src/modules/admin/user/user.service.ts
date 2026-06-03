@@ -11,6 +11,7 @@ import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
 import { FilterStatus } from '../../../utils/filterStatus.util';
+import { UserStatus } from 'src/database/entities/user.entity';
 
 @Injectable()
 export class UserService {
@@ -81,7 +82,33 @@ export class UserService {
         };
 
         // filter
-        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition);
+        const filterStatusList = [
+            {
+                name: "Tấc cả",
+                status: "",
+                class: "active"
+            },
+            {
+                name: "Hoạt động",
+                status: UserStatus.ACTIVE,
+                class: ""
+            },
+            {
+                name: "Dừng hoạt động",
+                status: UserStatus.INACTIVE,
+                class: ""
+            }, {
+                name: "Bị cấm",
+                status: UserStatus.BANNED,
+                class: ""
+            },
+            {
+                name: "Chờ xác thực",
+                status: UserStatus.PENDING,
+                class: ""
+            }
+        ]
+        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition, filterStatusList);
 
         // search
         const { searchResult, whereCondition } = this.search.search(

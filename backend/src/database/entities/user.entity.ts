@@ -8,6 +8,13 @@ import {
 import { Booking } from './booking.entity';
 import { UserRole } from './userRole.entity';
 
+export enum UserStatus {
+    ACTIVE = 'active',
+    PENDING = 'pending',
+    BANNED = 'banned',
+    INACTIVE = 'inactive'
+}
+
 @Entity('Users')
 export class User {
     @PrimaryGeneratedColumn()
@@ -28,7 +35,11 @@ export class User {
     @Column({ type: 'nvarchar', nullable: true })
     avatar: string;
 
-    @Column({ default: 'active' })
+    @Column({ 
+        type: 'nvarchar',
+        length: 50,
+        default: UserStatus.ACTIVE
+    })
     status: string;
 
     @Column({ default: false })

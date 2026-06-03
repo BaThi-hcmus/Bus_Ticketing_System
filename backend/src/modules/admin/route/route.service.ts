@@ -10,6 +10,7 @@ import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
 import { GeocodingUtil } from 'src/utils/geocoding.util';
+import { RouteStatus } from 'src/database/entities/route.entity';
 
 @Injectable()
 export class RouteService {
@@ -25,8 +26,37 @@ export class RouteService {
 
     async getRoutes(status: string, keyword: string, page: number, sortType: string): Promise<any> {
         const queryCondition = { deleted: false };
-        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition);
-        const { searchResult, whereCondition } = this.search.search(keyword, queryCondition, ["departureLocation", "destinationLocation"]);
+
+        // Lọc trạng thái
+        const filterStatusList = [
+            {
+                name: "Tấc cả",
+                status: "",
+                class: "active"
+            },
+            {
+                name: "Hoạt động",
+                status: RouteStatus.ACTIVE,
+                class: ""
+            },
+            {
+                name: "Dừng hoạt động",
+                status: RouteStatus.INACTIVE,
+                class: ""
+            },
+            {
+                name: "Bảo trì",
+                status: RouteStatus.SUSPENDED,
+                class: ""
+            }
+        ]
+        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition, filterStatusList);
+
+        const { searchResult, whereCondition } = this.search.search(
+            keyword, 
+            queryCondition, 
+            ["departureStation.name", "destinationStation.name"]);
+
         const paginationObject = await this.pagination.pagination(page, whereCondition, this.routeRepo);
 
         const sortList = [

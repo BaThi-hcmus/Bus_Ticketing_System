@@ -10,6 +10,7 @@ import { FilterStatus } from '../../../utils/filterStatus.util';
 import { Search } from '../../../utils/search.util';
 import { Pagination } from '../../../utils/pagination.util';
 import { Sort } from 'src/utils/sort.ulti';
+import { RoleStatus } from 'src/database/entities/role.entity';
 
 @Injectable()
 export class RoleService {
@@ -29,7 +30,24 @@ export class RoleService {
         }
 
         //filter
-        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition);
+        const filterStatusList = [
+            {
+                name: "Tấc cả",
+                status: "",
+                class: "active"
+            },
+            {
+                name: "Hoạt động",
+                status: RoleStatus.ACTIVE,
+                class: ""
+            },
+            {
+                name: "Dừng hoạt động",
+                status: RoleStatus.INACTIVE,
+                class: ""
+            }
+        ]
+        const filterStatusObject = this.filterStatus.filterStatus(status, queryCondition, filterStatusList);
 
         //search
         const { searchResult, whereCondition } = this.search.search(

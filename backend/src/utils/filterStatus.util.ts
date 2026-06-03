@@ -2,37 +2,24 @@ import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class FilterStatus {
-    filterStatus = (status, queryCondition) => {
-        const filterStatusObject = [
-            {
-                name: "Tấc cả",
-                status: "",
-                class: "active"
-            },
-            {
-                name: "Hoạt động",
-                status: "active",
-                class: ""
-            },
-            {
-                name: "Dừng hoạt động",
-                status: "inactive",
-                class: ""
-            }
-        ]
-
+    filterStatus = (
+        status, // status do frontend gửi đến
+        queryCondition, // điều kiện lọc
+        filterStatusList // danh sách tiêu chí lọc
+    ) => {
+        
         if (status) {
-            const item = filterStatusObject.find(item => {
+            const item = filterStatusList.find(item => {
                 return item.status == status;
             })
 
             if (item) {
-                filterStatusObject.forEach(it => it.class = "");
+                filterStatusList.forEach(it => it.class = "");
                 item.class = "active";
                 queryCondition.status = status;
             }
         }
 
-        return filterStatusObject;
+        return filterStatusList;
     }
 }
