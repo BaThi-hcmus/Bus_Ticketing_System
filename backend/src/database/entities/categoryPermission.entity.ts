@@ -20,7 +20,7 @@ export class CategoryPermission {
     @Column({ type: 'nvarchar', unique: true })
     name: string;
 
-    @CreateDateColumn({ type: 'date' })
+    @CreateDateColumn({ type: 'datetime2', name: 'created_at' })
     createdAt: Date;
 
     @Column({ default: false })

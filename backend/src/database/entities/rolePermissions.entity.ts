@@ -13,10 +13,10 @@ export class RolePermission {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
+    @Column({type: 'int', name: 'role_id'})
     roleId: number;
 
-    @Column()
+    @Column({type: 'int', name: 'permission_id'})
     permissionId: number;
 
     @ManyToOne(() => Role, (role) => role.rolePermissions)

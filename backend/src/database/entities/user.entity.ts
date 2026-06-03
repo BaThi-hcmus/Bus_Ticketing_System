@@ -26,10 +26,10 @@ export class User {
     @Column({ type: 'varchar', length: 255 }) // Password mặc định bị ẩn khỏi các câu query
     password: string;
 
-    @Column({ type: 'nvarchar', length: 100 })
+    @Column({ type: 'nvarchar', length: 100, name: 'full_name' })
     fullName: string;
 
-    @Column({ type: 'varchar', length: 15, unique: true, nullable: true })
+    @Column({ type: 'varchar', length: 15, unique: true, nullable: true, name: 'phone_number' })
     phoneNumber: string;
 
     @Column({ type: 'nvarchar', nullable: true })
@@ -45,10 +45,10 @@ export class User {
     @Column({ default: false })
     deleted: boolean;
 
-    @CreateDateColumn()
+    @CreateDateColumn({type: 'datetime2', name: 'created_at'})
     createdAt: Date;
 
-    @CreateDateColumn()
+    @CreateDateColumn({type: 'datetime2', name: 'updated_at'})
     updatedAt: Date;
 
     @OneToMany(() => Booking, (booking) => booking.user)

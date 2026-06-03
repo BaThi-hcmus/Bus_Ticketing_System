@@ -13,10 +13,10 @@ export class UserRole {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
+    @Column({type: 'int', name: 'user_id'})
     userId: number;
 
-    @Column()
+    @Column({type: 'int', name: 'role_id'})
     roleId: number;
 
     @ManyToOne(() => User, (user) => user.userRoles)

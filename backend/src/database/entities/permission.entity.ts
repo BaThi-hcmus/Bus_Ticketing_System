@@ -24,10 +24,10 @@ export class Permission {
     @Column()
     name: string;
 
-    @Column({ nullable: true })
+    @Column({ nullable: true, name: 'display_name' })
     displayName: string;
 
-    @Column({ nullable: true })
+    @Column({ nullable: true, name: 'category_permission_id' })
     categoryPermissionId: number;
 
     @Column({ default: false })
@@ -40,7 +40,7 @@ export class Permission {
     })
     status: string;
 
-    @CreateDateColumn({ type: 'datetime' })
+    @CreateDateColumn({ type: 'datetime2', name: 'created_at' })
     createdAt: Date;
 
     @OneToMany(() => RolePermission, (rolePermission) => rolePermission.permission)

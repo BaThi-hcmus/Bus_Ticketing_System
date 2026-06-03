@@ -32,7 +32,7 @@ export class Role {
     })
     status: string;
 
-    @CreateDateColumn({ type: 'date' })
+    @CreateDateColumn({ type: 'datetime2', name: 'created_at' })
     createdAt: Date;
 
     @OneToMany(() => RolePermission, (rolePermission) => rolePermission.role)
